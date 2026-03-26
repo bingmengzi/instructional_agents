@@ -1,0 +1,35 @@
+{
+  "student_profile": {
+    "student_background": "Graduate-level Computer Science students with diverse disciplinary and international backgrounds.",
+    "aggregate_academic_performance": "Generally strong academic readiness with varied prior exposure to ML and assessment styles.",
+    "anticipated_learner_needs_and_barriers": "Familiar with Python; uneven experience with tools like Colab; some gaps in math background; benefits from simplified language and visuals."
+  },
+  "instructor_preferences": {
+    "instructor_emphasis_intent": "Tools & Platforms to be used in class: Open‑source frameworks such as LangChain, LlamaIndex, and AutoGen for agent construction.\nBenchmarks including AgentBench, τ‑bench, AceBench, MedAgentBench, ST‑WebAgentBench, and Agent‑SafetyBench for evaluation.\nVector database and SQL technologies (e.g., PostgreSQL with pgvector, Milvus) for memory and retrieval.\nSafety evaluation and red‑teaming tools for prompt injection testing, hallucination control, and privacy auditing.",
+    "instructor_style_preferences": "Structured instructional scripts, minimal slide clutter, and a professional but supportive tone.",
+    "instructor_focus_for_assessment": "Project-driven assessment with open-ended tasks; traditional exams are not emphasized."
+  },
+  "course_structure": {
+    "course_learning_outcomes": "Critically analyze and compare agent benchmarks and evaluation protocols; Explain how world models and memory architectures influence agent behavior and planning; Evaluate instruction‑following and planning capabilities of LLM‑based agents using recent techniques; Apply context engineering methods—prompt design, retrieval augmentation, and structured inputs—to improve performance; Assess and mitigate safety, privacy, and trustworthiness risks in LLM‑based agents; Build and evaluate a small agentic system for a real‑world task and present findings.",
+    "total_number_of_weeks": "14 weeks",
+    "weekly_schedule_outline": "Introduction to LLM‑based Agents — taxonomy of agents, safety as a design principle\nArchitectures & Building Blocks — planning loops, memory, action spaces, tool invocation\nAgent Benchmarks I — QA vs. interactive tasks; AgentBench, TauBench, AceBench\nAgent Benchmarks II — domain‑specific (clinical, code, embodied); evaluation protocols\nWorld Models & State Representation — open‑world vs. closed‑world assumptions; internal vs. external state\nMemory & Long‑Term Context — episodic vs. semantic memory, vector DBs, scratchpads\nInstruction Following & Policy Learning — measuring reliability, reward hacking, RLHF and post‑training methods\nContext Engineering I — prompt reformulation, few‑shot orchestration, structured prompts \nContext Engineering II — Retrieval‑Augmented Generation (RAG) vs. Long‑Context; hybrid symbolic–neural retrieval\nMulti‑Agent Systems & Collaboration — orchestrators, role assignment, emergent behavior\nTrustworthiness, Safety & Privacy — red‑teaming, hallucination control, prompt injection defense, auditable reasoning\nApplications Deep Dive — choose one domain (clinical, education, cybersecurity); Safety\nStudent Project Check‑Ins & Poster Session — peer feedback on prototypes (including safety metrics)\nFuture Directions & Course Wrap‑Up — meta‑agents, auto‑formalization, theorem provers, safety by design"
+  },
+  "assessment_design": {
+    "assessment_format_preferences": "Test – Mid Term and Final (30%) \nShort Projects (30%) – Small coding tasks that include running benchmarks, adding memory modules, implementing safety mitigations, and evaluating instruction‑following.\nSemester Project (30%) – Each student or pair builds or evaluates an LLM‑based agentic system, with a mandatory safety/trustworthiness component and final presentation.\nParticipation (10%) – Students lead one discussion or safety‑related demo, contribute to peer feedback, and engage in class discussions. Some Possible Initial Semester Projects\nImplement a hybrid retrieval router that chooses between RAG and long‑context models based on task requirements.\nExtend an existing agent benchmark with new tasks, including safety‑critical domains such as finance or healthcare.\nDesign a multi‑agent collaboration scenario (planning or debate) with an integrated safety monitor agent.\nInvestigate instruction‑following failures using RLHF and propose mitigations based on GRPO‑λ or DeepSeek‑R1 methods.\nDevelop a privacy‑aware context engineering pipeline for a sensitive domain using retrieval‑augmented generation.",
+    "assessment_delivery_constraints": "Submissions via learning management system in standard file formats (e.g., PDF, notebook)."
+  },
+  "teaching_constraints": {
+    "platform_policy_constraints": "Hosted on institution-approved LMS; materials must meet accessibility and compliance standards.",
+    "ta_support_availability": "Part-time teaching assistant available for grading and support.",
+    "instructional_delivery_context": "In-person sessions with live walkthroughs and laptop-based activities.",
+    "max_slide_count": "50"
+  },
+  "institutional_requirements": {
+    "program_learning_outcomes": "Aligns with learning goals related to modeling, evaluation, and practical data analysis.",
+    "academic_policies_and_institutional_standards": "Adheres to university-wide policies on integrity, accessibility, and digital content use.",
+    "department_syllabus_requirements": "Required components include outcomes, grading policy, and institutional statements."
+  },
+  "prior_feedback": {
+    "historical_course_evaluation_results": "Historical Evaluation Results & Feedback highlights preference for hands-on learning; pacing adjustments recommended in early weeks."
+  }
+}

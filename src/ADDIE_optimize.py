@@ -33,10 +33,10 @@ class ADDIEOptimizer:
     Mirrors the ADDIE class: creates agents and delegates execution to OptimizeRunner.
     """
 
-    def __init__(self, model_name: str = "gpt-4o-mini", copilot: bool = False):
+    def __init__(self, model_name: str = "gpt-4o-mini", copilot: bool = False, seed: int = None, temperature: float = None):
         self.model_name = model_name
         self.copilot = copilot
-        self.llm = LLM(model_name=model_name)
+        self.llm = LLM(model_name=model_name, seed=seed, temperature=temperature)
 
     def create_optimize_agents(self) -> Dict[str, Agent]:
         """

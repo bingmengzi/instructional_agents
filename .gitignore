@@ -3,7 +3,6 @@ exp/
 assets/
 __pycache__/
 move_to_cache.py
-.env.example
 *.code-workspace
 .env 
 catalog/uploaded_*.json.env

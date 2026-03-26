@@ -374,6 +374,11 @@ python run.py "AI Fundamentals" --catalog ai_catalog
 python run.py "Educational Psychology" --copilot --catalog edu_psy
 ```
 
+**Minimal Working Example** (generates a small 3-week course in ~5 min):
+```bash
+python run.py "Intro to Python" --catalog mwe_catalog --exp mwe_test --seed 42
+```
+
 **Command Line Arguments**:
 ```bash
 python run.py <course_name> [OPTIONS]
@@ -387,6 +392,11 @@ Options:
                            (optional: specify catalog name without '.json')
   --model MODEL            OpenAI model to use (default: gpt-4o-mini)
   --exp EXP_NAME           Experiment name for saving output (default: exp1)
+  --seed SEED              Random seed for reproducibility
+  --temperature TEMP       Sampling temperature for LLM
+  --optimize STORAGE_ID    Optimize mode: provide storage_id of uploaded PDFs
+  --requirements TEXT      User requirements for optimization (with --optimize)
+  --chapter NAME           Specific chapter to optimize (with --optimize)
 ```
 
 ### Method 3: Direct API Calls

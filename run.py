@@ -37,7 +37,7 @@ def load_catalog(catalog_dir: str = "catalog", catalog_name: str = "merged_catal
     return data_catalog
 
 
-def run_instructional_design(course_name: str, copilot = None, catalog = None, model_name: str = "gpt-4o-mini", exp_name: str = "test"):
+def run_instructional_design(course_name: str, copilot = None, catalog = None, model_name: str = "gpt-4o-mini", exp_name: str = "test", seed: int = None, temperature: float = None):
     """
     Main function to run the instructional design workflow by sequentially
     executing the six deliberation processes
@@ -94,7 +94,7 @@ def run_instructional_design(course_name: str, copilot = None, catalog = None, m
     print("Using catalog data for the workflow.")
 
 
-    addie = ADDIE(course_name, model_name=model_name, copilot=use_copilot, catalog=use_catalog, data_catalog=data_catalog, data_copilot=data_copilot)
+    addie = ADDIE(course_name, model_name=model_name, copilot=use_copilot, catalog=use_catalog, data_catalog=data_catalog, data_copilot=data_copilot, seed=seed, temperature=temperature)
 
     # Run the workflow
     output_dir = f"./exp/{exp_name}/"
@@ -185,6 +185,20 @@ if __name__ == "__main__":
         help="Experiment name for logging"
     )
 
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Random seed for reproducibility (passed to OpenAI API)"
+    )
+
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=None,
+        help="Sampling temperature (passed to OpenAI API)"
+    )
+
     # Optimize mode arguments
     parser.add_argument(
         "--optimize",
@@ -233,4 +247,6 @@ if __name__ == "__main__":
             catalog=args.catalog,
             model_name=args.model,
             exp_name=args.exp,
+            seed=args.seed,
+            temperature=args.temperature,
         )
