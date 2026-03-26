@@ -52,8 +52,20 @@ Paper = "https://arxiv.org/abs/2508.19611"
 [project.scripts]
 instructional-agents = "run:main"
 
+[tool.setuptools]
+py-modules = ["run", "api_server", "evaluate"]
+
 [tool.setuptools.packages.find]
 include = ["src*"]
+
+[tool.setuptools.package-data]
+"*" = [
+    "catalog/*.json",
+    "catalog/references/*.tex",
+    "frontend/*.html",
+    "frontend/*.js",
+    "frontend/*.css",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

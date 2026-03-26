@@ -1,8 +1,48 @@
-logs/
-exp/
-assets/
+# Python
 __pycache__/
-move_to_cache.py
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+
+# Build & Distribution
+build/
+dist/
+*.whl
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment & Secrets
+.env
+config.json
+
+# IDE
+.idea/
+.vscode/
 *.code-workspace
-.env 
-catalog/uploaded_*.json.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project outputs
+exp/
+eval/
+logs/
+assets/
+.cache/
+
+# Uploaded catalogs (user-specific)
+catalog/uploaded_*.json
+
+# Test & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Legacy
+move_to_cache.py

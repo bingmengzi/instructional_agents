@@ -145,10 +145,14 @@ def run_optimization(storage_id: str, user_requirements: str, model_name: str = 
     )
 
 
-if __name__ == "__main__":
-    with open("config.json", "r") as f:
-        config = json.load(f)
-    os.environ["OPENAI_API_KEY"] = config.get("OPENAI_API_KEY", "")
+def main():
+    """CLI entry point for instructional-agents."""
+    # Load config if available
+    config_path = os.path.join(os.path.dirname(__file__), "config.json")
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            config = json.load(f)
+        os.environ.setdefault("OPENAI_API_KEY", config.get("OPENAI_API_KEY", ""))
 
     # Set up command line arguments
     parser = argparse.ArgumentParser(description="Run instructional design workflow")
@@ -158,16 +162,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--copilot",
         type=str,
-        nargs='?',  # optional, provided with string if available
-        const="default_copilot",  # If user provides --copilot but no value, use "default"
+        nargs='?',
+        const="default_copilot",
         help="Enable copilot mode. Optionally specify copilot source name."
     )
 
     parser.add_argument(
         "--catalog",
         type=str,
-        nargs='?',  # optional, provided with string if available
-        const="default_catalog",  # If user provides --catalog but no value, use "default"
+        nargs='?',
+        const="default_catalog",
         help="Enable catalog mode. Optionally specify catalog source name."
     )
 
@@ -250,3 +254,7 @@ if __name__ == "__main__":
             seed=args.seed,
             temperature=args.temperature,
         )
+
+
+if __name__ == "__main__":
+    main()

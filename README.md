@@ -2,6 +2,7 @@
 
 # Instructional Agents: LLM Agents on Automated Course Material Generation for Teaching Faculties
 
+[![PyPI](https://img.shields.io/pypi/v/instructional-agents?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/instructional-agents/)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
@@ -42,6 +43,8 @@ An AI-powered instructional design system based on the ADDIE model for automated
 
 ### 📦 Releases
 
+> **[2026.3.26]** Published on [PyPI](https://pypi.org/project/instructional-agents/) - `pip install instructional-agents`
+>
 > **[2026.1.6]** Release [v1.0.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - Initial release with core features - Thanks to all the contributors! ❤️
 
 <details>
@@ -285,9 +288,27 @@ See [Documentation](#-documentation) section below for detailed guides and refer
 
 ---
 
+## 📦 Install via PyPI
+
+```bash
+pip install instructional-agents
+```
+
+After installation, you can run the CLI directly:
+
+```bash
+# Set your OpenAI API key
+export OPENAI_API_KEY=your_api_key_here
+
+# Generate a course
+instructional-agents "Introduction to Machine Learning"
+```
+
+---
+
 ## 🔧 Local Development Setup
 
-For developers who want to run the system locally without Docker:
+For developers who want to run the system locally from source:
 
 ### 1. Prerequisites
 
@@ -301,7 +322,11 @@ For developers who want to run the system locally without Docker:
 ### 2. Install Dependencies
 
 ```bash
+# From source
 pip install -r requirements.txt
+
+# Or install in editable mode
+pip install -e .
 ```
 
 ### 3. Configuration

@@ -2,6 +2,7 @@
 
 # Instructional Agents: 基于 LLM 智能体的自动化课程材料生成系统
 
+[![PyPI](https://img.shields.io/pypi/v/instructional-agents?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/instructional-agents/)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
@@ -43,6 +44,8 @@
 
 ### 📦 版本发布
 
+> **[2026.3.26]** 已发布至 [PyPI](https://pypi.org/project/instructional-agents/) - `pip install instructional-agents`
+>
 > **[2026.1.6]** 发布 [v1.0.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - 首次发布，核心功能已上线 - 感谢所有贡献者！❤️
 
 <details>
@@ -286,9 +289,27 @@ exp/{experiment_name}/
 
 ---
 
+## 📦 通过 PyPI 安装
+
+```bash
+pip install instructional-agents
+```
+
+安装后可直接使用命令行工具：
+
+```bash
+# 设置 OpenAI API Key
+export OPENAI_API_KEY=your_api_key_here
+
+# 生成课程
+instructional-agents "机器学习导论"
+```
+
+---
+
 ## 🔧 本地开发配置
 
-适用于想在本地运行系统而不使用 Docker 的开发者：
+适用于想从源码运行系统的开发者：
 
 ### 1. 前置要求
 
@@ -302,7 +323,11 @@ exp/{experiment_name}/
 ### 2. 安装依赖
 
 ```bash
+# 从源码安装
 pip install -r requirements.txt
+
+# 或以开发模式安装
+pip install -e .
 ```
 
 ### 3. 配置
