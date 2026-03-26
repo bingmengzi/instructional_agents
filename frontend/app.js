@@ -499,15 +499,20 @@ function setupEventListeners() {
         languageToggle.addEventListener('click', toggleLanguage);
     }
 
-    // Slide Optimization
-    const slideForm = document.getElementById('slide-optimization-form');
-    if (slideForm) {
-        slideForm.addEventListener('submit', handleSlideOptimizationSubmit);
+    // Mode toggle
+    const modeGenerate = document.getElementById('mode-generate');
+    const modeOptimize = document.getElementById('mode-optimize');
+    if (modeGenerate) {
+        modeGenerate.addEventListener('click', () => switchMode('generate'));
+    }
+    if (modeOptimize) {
+        modeOptimize.addEventListener('click', () => switchMode('optimize'));
     }
 
-    const optimizationMode = document.getElementById('optimization-mode');
-    if (optimizationMode) {
-        optimizationMode.addEventListener('change', handleOptimizationModeChange);
+    // Optimize mode
+    const optimizeForm = document.getElementById('optimize-form');
+    if (optimizeForm) {
+        optimizeForm.addEventListener('submit', handleOptimizeSubmit);
     }
 
     const slidePdfFiles = document.getElementById('slide-pdf-files');
@@ -515,28 +520,57 @@ function setupEventListeners() {
         slidePdfFiles.addEventListener('change', handleSlideFilesChange);
     }
 
-    const generateLatexBtn = document.getElementById('generate-latex-btn');
-    if (generateLatexBtn) {
-        generateLatexBtn.addEventListener('click', handleGenerateLatex);
-    }
-
-    const toggleFeedbackBtn = document.getElementById('toggle-feedback-btn');
-    if (toggleFeedbackBtn) {
-        toggleFeedbackBtn.addEventListener('click', function() {
-            const feedbackSection = document.getElementById('latex-feedback-section');
-            if (feedbackSection.style.display === 'none') {
-                feedbackSection.style.display = 'block';
-                toggleFeedbackBtn.innerHTML = '<span>✕</span><span> 隐藏反馈</span>';
-            } else {
-                feedbackSection.style.display = 'none';
-                toggleFeedbackBtn.innerHTML = '<span>💬</span><span> ' + t('toggleFeedbackButton') + '</span>';
+    const optimizeClearLogsBtn = document.getElementById('optimize-clear-logs-btn');
+    if (optimizeClearLogsBtn) {
+        optimizeClearLogsBtn.addEventListener('click', () => {
+            const container = document.getElementById('optimize-logs-container');
+            if (container) {
+                container.innerHTML = '<p class="logs-placeholder">' + t('logsPlaceholder') + '</p>';
             }
         });
     }
+}
 
-    const improveLatexBtn = document.getElementById('improve-latex-btn');
-    if (improveLatexBtn) {
-        improveLatexBtn.addEventListener('click', handleImproveLatex);
+// Switch between Generate and Optimize modes
+function switchMode(mode) {
+    const generateSections = ['config-section', 'progress-section', 'results-section'];
+    const optimizeSections = ['optimize-section', 'optimize-progress-section', 'optimize-results-section'];
+
+    const modeGenerateBtn = document.getElementById('mode-generate');
+    const modeOptimizeBtn = document.getElementById('mode-optimize');
+
+    if (mode === 'generate') {
+        modeGenerateBtn.classList.add('active');
+        modeOptimizeBtn.classList.remove('active');
+        generateSections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = '';
+        });
+        optimizeSections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        // Re-hide progress/results if no task running
+        if (!currentTaskId) {
+            const ps = document.getElementById('progress-section');
+            const rs = document.getElementById('results-section');
+            if (ps) ps.style.display = 'none';
+            if (rs) rs.style.display = 'none';
+        }
+    } else {
+        modeOptimizeBtn.classList.add('active');
+        modeGenerateBtn.classList.remove('active');
+        generateSections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        // Show optimize config, hide progress/results unless running
+        const os = document.getElementById('optimize-section');
+        if (os) os.style.display = '';
+        const ops = document.getElementById('optimize-progress-section');
+        if (ops && !window.currentOptimizeTaskId) ops.style.display = 'none';
+        const ors = document.getElementById('optimize-results-section');
+        if (ors && !window.currentOptimizeTaskId) ors.style.display = 'none';
     }
 }
 
@@ -1317,12 +1351,12 @@ let currentStorageId = null;
 function handleSlideFilesChange(e) {
     const files = Array.from(e.target.files);
     const filesList = document.getElementById('slide-files-list');
-    
+
     if (files.length === 0) {
         filesList.innerHTML = '';
         return;
     }
-    
+
     let html = '<div style="margin-top: 10px;"><strong>已选择的文件：</strong><ul style="margin: 5px 0; padding-left: 20px;">';
     files.forEach(file => {
         html += `<li>📄 ${escapeHtml(file.name)} (${formatFileSize(file.size)})</li>`;
@@ -1331,289 +1365,222 @@ function handleSlideFilesChange(e) {
     filesList.innerHTML = html;
 }
 
-// Handle optimization mode change
-function handleOptimizationModeChange(e) {
-    const mode = e.target.value;
-    const chapterNameGroup = document.getElementById('chapter-name-group');
-    
-    if (mode === 'all') {
-        chapterNameGroup.style.display = 'none';
-    } else {
-        chapterNameGroup.style.display = 'block';
-    }
-}
-
-// Handle slide optimization form submission
-async function handleSlideOptimizationSubmit(e) {
+// Handle optimize form submission (new unified optimize mode)
+async function handleOptimizeSubmit(e) {
     e.preventDefault();
-    
+
     if (!apiKey) {
-        alert(t('alertProvideApiKey'));
-        return;
+        const key = document.getElementById('api-key').value.trim();
+        if (!key) {
+            alert(t('alertProvideApiKey'));
+            document.getElementById('api-key').focus();
+            return;
+        }
+        saveApiKey();
+        apiKey = key;
     }
-    
+
     const filesInput = document.getElementById('slide-pdf-files');
     const files = Array.from(filesInput.files);
-    
+
     if (files.length === 0) {
-        alert(t('slideNoFilesSelected'));
+        alert(t('slideNoFilesSelected') || 'Please select PDF files');
         return;
     }
-    
-    const optimizationMode = document.getElementById('optimization-mode').value;
-    const chapterName = document.getElementById('chapter-name').value.trim();
+
     const userRequirements = document.getElementById('user-requirements').value.trim();
-    
     if (!userRequirements) {
-        alert('请填写优化需求描述');
+        alert('Please provide optimization requirements');
         return;
     }
-    
-    if (optimizationMode === 'chapter' && !chapterName) {
-        alert('请填写章节名称');
-        return;
-    }
-    
-    const optimizeBtn = document.getElementById('optimize-slides-btn');
-    const originalText = optimizeBtn.innerHTML;
-    optimizeBtn.disabled = true;
-    optimizeBtn.innerHTML = '<span>⏳</span><span>处理中...</span>';
-    
-    const resultsDiv = document.getElementById('optimization-results');
-    const resultsContent = document.getElementById('optimization-results-content');
-    resultsDiv.style.display = 'block';
-    resultsContent.innerHTML = '<p>' + t('slideOptimizationStarted') + '</p>';
-    
+
+    const modelName = document.getElementById('optimize-model-name').value;
+    const expName = document.getElementById('optimize-exp-name').value.trim() || 'default';
+    const chapterName = document.getElementById('chapter-name').value.trim() || null;
+
+    const submitBtn = document.getElementById('optimize-submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span>⏳</span><span>处理中...</span>';
+
     try {
         // Step 1: Upload PDF files
         const uploadStatus = document.getElementById('slide-upload-status');
         uploadStatus.style.display = 'block';
-        uploadStatus.querySelector('.upload-status-message').textContent = '正在上传PDF文件...';
-        
-        const storageId = await uploadSlideFiles(files);
-        currentStorageId = storageId;
-        
-        uploadStatus.querySelector('.upload-status-message').innerHTML = 
-            '<span style="color: green;">' + t('slideUploadSuccess', { count: files.length }) + '</span>';
-        
-        // Step 2: Optimize - Get exp_name from form input or window variable
-        const expNameInput = document.getElementById('exp-name');
-        let expName = 'default';
-        if (expNameInput) {
-            expName = expNameInput.value.trim();
+        uploadStatus.querySelector('.upload-status-message').textContent = 'Uploading PDF files...';
+
+        const storageId = await uploadOptimizeFiles(files);
+
+        uploadStatus.querySelector('.upload-status-message').innerHTML =
+            '<span style="color: green;">Upload complete (' + files.length + ' files)</span>';
+
+        // Step 2: Start optimization task (background)
+        const response = await fetch(`${API_BASE_URL}/api/optimize/start`, {
+            method: 'POST',
+            headers: getApiHeaders(),
+            body: JSON.stringify({
+                storage_id: storageId,
+                user_requirements: userRequirements,
+                model_name: modelName,
+                exp_name: expName,
+                chapter_name: chapterName
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ detail: 'Start failed' }));
+            throw new Error(error.detail || 'Failed to start optimization');
         }
-        if (!expName) {
-            expName = window.currentExpName || 'default';
-        }
-        
-        let result;
-        if (optimizationMode === 'all') {
-            result = await optimizeAllChapters(storageId, userRequirements, expName);
-        } else {
-            result = await optimizeChapter(storageId, chapterName, userRequirements, expName);
-        }
-        
-        // Step 3: Display results
-        displayOptimizationResults(result, optimizationMode);
-        
+
+        const result = await response.json();
+        window.currentOptimizeTaskId = result.task_id;
+
+        // Step 3: Show progress section and start polling + SSE
+        const progressSection = document.getElementById('optimize-progress-section');
+        progressSection.style.display = 'block';
+        progressSection.scrollIntoView({ behavior: 'smooth' });
+
+        startOptimizePolling(result.task_id, expName);
+        startOptimizeLogStream(result.task_id);
+
     } catch (error) {
-        console.error('Optimization error:', error);
-        resultsContent.innerHTML = '<p style="color: red;">' + 
-            t('slideOptimizationFailed', { message: error.message }) + '</p>';
+        console.error('Optimize error:', error);
+        alert('Optimization failed: ' + error.message);
     } finally {
-        optimizeBtn.disabled = false;
-        optimizeBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>🔧</span><span>开始优化</span>';
     }
 }
 
-// Upload slide PDF files
-async function uploadSlideFiles(files) {
+// Upload PDF files for optimization
+async function uploadOptimizeFiles(files) {
     const formData = new FormData();
     files.forEach(file => {
         formData.append('files', file);
     });
-    
+
     const headers = {};
     if (apiKey) {
         headers['X-OpenAI-API-Key'] = apiKey;
     }
-    
-    const response = await fetch(`${API_BASE_URL}/api/slides/upload-folder`, {
+
+    const response = await fetch(`${API_BASE_URL}/api/optimize/upload`, {
         method: 'POST',
         headers: headers,
         body: formData
     });
-    
+
     if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: 'Upload failed' }));
         throw new Error(error.detail || 'Failed to upload PDF files');
     }
-    
+
     const result = await response.json();
     return result.storage_id;
 }
 
-// Optimize specific chapter
-async function optimizeChapter(storageId, chapterName, userRequirements, expName = 'default') {
-    const response = await fetch(`${API_BASE_URL}/api/slides/optimize-chapter`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-OpenAI-API-Key': apiKey
-        },
-        body: JSON.stringify({
-            storage_id: storageId,
-            chapter_name: chapterName,
-            user_requirements: userRequirements,
-            exp_name: expName
-        })
-    });
-    
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ detail: 'Optimization failed' }));
-        throw new Error(error.detail || 'Failed to optimize chapter');
-    }
-    
-    return await response.json();
-}
+// Poll optimization task status
+function startOptimizePolling(taskId, expName) {
+    const pollInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/optimize/status/${taskId}`, {
+                headers: getApiHeaders()
+            });
+            if (!response.ok) return;
 
-// Optimize all chapters
-async function optimizeAllChapters(storageId, userRequirements, expName = 'default') {
-    const response = await fetch(`${API_BASE_URL}/api/slides/optimize-all`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-OpenAI-API-Key': apiKey
-        },
-        body: JSON.stringify({
-            storage_id: storageId,
-            user_requirements: userRequirements,
-            exp_name: expName
-        })
-    });
-    
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ detail: 'Optimization failed' }));
-        throw new Error(error.detail || 'Failed to optimize all chapters');
-    }
-    
-    return await response.json();
-}
+            const status = await response.json();
 
-// Display optimization results
-function displayOptimizationResults(result, mode) {
-    const resultsContent = document.getElementById('optimization-results-content');
-    
-    if (!result.success) {
-        resultsContent.innerHTML = '<p style="color: red;">错误: ' + (result.error || 'Unknown error') + '</p>';
-        return;
-    }
-    
-    let html = '';
-    
-    if (mode === 'all') {
-        // Display results for all chapters
-        html += '<div class="optimization-summary">';
-        html += '<h4>总体摘要</h4>';
-        html += '<p>总共处理章节数: ' + result.total_chapters + '</p>';
-        if (result.overall_summary) {
-            html += '<p>成功: ' + result.overall_summary.successful + '</p>';
-            html += '<p>失败: ' + result.overall_summary.failed + '</p>';
+            // Update progress bar
+            const progressBar = document.getElementById('optimize-progress-bar');
+            const progressText = document.getElementById('optimize-progress-text');
+            const stageText = document.getElementById('optimize-current-stage');
+
+            if (progressBar) progressBar.style.width = status.progress + '%';
+            if (progressText) progressText.textContent = status.progress + '%';
+            if (stageText) stageText.textContent = status.current_stage || '';
+
+            if (status.status === 'completed') {
+                clearInterval(pollInterval);
+                if (progressText) progressText.textContent = 'Completed!';
+
+                // Load results
+                loadOptimizeResults(taskId, expName);
+            } else if (status.status === 'failed') {
+                clearInterval(pollInterval);
+                const errorDiv = document.getElementById('optimize-error-message');
+                if (errorDiv) {
+                    errorDiv.style.display = 'block';
+                    errorDiv.textContent = 'Error: ' + (status.error || 'Unknown error');
+                }
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
         }
-        html += '</div>';
-        
-        html += '<div class="chapters-results">';
-        html += '<h4>各章节结果</h4>';
-        
-        result.chapters.forEach((chapterResult, index) => {
-            html += '<div class="chapter-result" style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">';
-            html += '<h5>章节: ' + (chapterResult.chapter || `Chapter ${index + 1}`) + '</h5>';
-            
-            if (chapterResult.success) {
-                html += displayChapterDetails(chapterResult);
-            } else {
-                html += '<p style="color: red;">错误: ' + (chapterResult.error || 'Unknown error') + '</p>';
-            }
-            
-            html += '</div>';
-        });
-        
-        html += '</div>';
-    } else {
-        // Display result for single chapter
-        html += displayChapterDetails(result);
-    }
-    
-    resultsContent.innerHTML = html;
-    
-    // Show generate LaTeX section if single chapter optimization
-    const generateSection = document.getElementById('generate-latex-section');
-    if (mode === 'chapter' && result.success && result.knowledge_base_name) {
-        // Store knowledge base name for LaTeX generation
-        window.currentKnowledgeBaseName = result.knowledge_base_name;
-        window.currentOptimizationResult = result;
-        generateSection.style.display = 'block';
-    } else {
-        generateSection.style.display = 'none';
-    }
-    
-    // Scroll to results
-    document.getElementById('optimization-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 2000);
 }
 
-// Display chapter details
-function displayChapterDetails(chapterResult) {
-    let html = '';
-    
-    if (chapterResult.knowledge_base_name) {
-        html += '<p><strong>' + t('slideStorageIdLabel') + ':</strong> ' + chapterResult.knowledge_base_name + '</p>';
-    }
-    
-    if (chapterResult.extracted_slides) {
-        html += '<p><strong>提取的幻灯片数:</strong> ' + chapterResult.extracted_slides + '</p>';
-    }
-    
-    // Analysis section
-    if (chapterResult.analysis && chapterResult.analysis.analysis) {
-        html += '<div class="analysis-section" style="margin: 15px 0;">';
-        html += '<h5>' + t('slideAnalysisLabel') + '</h5>';
-        html += '<div class="analysis-content" style="background: #f5f5f5; padding: 15px; border-radius: 5px; white-space: pre-wrap;">';
-        html += escapeHtml(chapterResult.analysis.analysis);
-        html += '</div>';
-        html += '</div>';
-    }
-    
-    // Recommendations section
-    if (chapterResult.recommendations && chapterResult.recommendations.recommendations) {
-        html += '<div class="recommendations-section" style="margin: 15px 0;">';
-        html += '<h5>' + t('slideRecommendationsLabel') + '</h5>';
-        html += '<div class="recommendations-content" style="background: #e8f5e9; padding: 15px; border-radius: 5px; white-space: pre-wrap;">';
-        html += escapeHtml(chapterResult.recommendations.recommendations);
-        html += '</div>';
-        html += '</div>';
-    }
-    
-    // Relevant content section
-    if (chapterResult.relevant_content && chapterResult.relevant_content.length > 0) {
-        html += '<div class="relevant-content-section" style="margin: 15px 0;">';
-        html += '<h5>' + t('slideRelevantContentLabel') + '</h5>';
-        html += '<div style="max-height: 300px; overflow-y: auto;">';
-        chapterResult.relevant_content.forEach((content, index) => {
-            html += '<div style="margin: 10px 0; padding: 10px; background: #fff; border-left: 3px solid #4caf50;">';
-            html += '<strong>相关内容 ' + (index + 1) + ':</strong><br>';
-            html += '<div style="margin-top: 5px; white-space: pre-wrap; font-size: 0.9em; color: #666;">';
-            html += escapeHtml(content.content ? content.content.substring(0, 500) : '');
-            if (content.content && content.content.length > 500) {
-                html += '...';
+// Stream optimization logs via SSE
+function startOptimizeLogStream(taskId) {
+    const logsContainer = document.getElementById('optimize-logs-container');
+    if (!logsContainer) return;
+
+    logsContainer.innerHTML = '';
+
+    const eventSource = new EventSource(`${API_BASE_URL}/api/optimize/logs/${taskId}/stream`);
+
+    eventSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'log') {
+                const logLine = document.createElement('div');
+                logLine.className = 'log-line';
+                logLine.textContent = data.message;
+                logsContainer.appendChild(logLine);
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+            } else if (data.type === 'complete') {
+                eventSource.close();
             }
-            html += '</div>';
-            html += '</div>';
+        } catch (e) {
+            console.error('Log parse error:', e);
+        }
+    };
+
+    eventSource.onerror = function() {
+        eventSource.close();
+    };
+}
+
+// Load optimization results (file list)
+async function loadOptimizeResults(taskId, expName) {
+    const resultsSection = document.getElementById('optimize-results-section');
+    const resultsContent = document.getElementById('optimize-results-content');
+
+    resultsSection.style.display = 'block';
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/optimize/results/${taskId}/files`, {
+            headers: getApiHeaders()
         });
-        html += '</div>';
-        html += '</div>';
+        const data = await response.json();
+
+        if (!data.files || data.files.length === 0) {
+            resultsContent.innerHTML = '<p>No files generated yet.</p>';
+            return;
+        }
+
+        let html = '<ul style="list-style: none; padding: 0;">';
+        data.files.forEach(file => {
+            const downloadUrl = `${API_BASE_URL}/api/optimize/results/${taskId}/download/${file.path}`;
+            html += `<li style="margin: 8px 0; padding: 8px; background: #f5f5f5; border-radius: 4px;">
+                <a href="${downloadUrl}" target="_blank" download>📄 ${escapeHtml(file.name)}</a>
+                <span style="color: #999; margin-left: 10px;">${formatFileSize(file.size)}</span>
+            </li>`;
+        });
+        html += '</ul>';
+        resultsContent.innerHTML = html;
+
+    } catch (error) {
+        resultsContent.innerHTML = '<p style="color: red;">Failed to load results: ' + error.message + '</p>';
     }
-    
-    return html;
 }
 
 // Escape HTML to prevent XSS
@@ -1621,325 +1588,5 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-}
-
-// Extract chapter name from knowledge base name
-function extractChapterFromKbName(kbName) {
-    // Try to extract chapter information from knowledge base name
-    // Examples: 
-    //   "storage_abc123_chapter_Ch3" -> "chapter_3"
-    //   "storage_abc123_chapter_Lecture_8" -> "lecture_8"
-    //   "storage_abc123_Lecture_8" -> "lecture_8"
-    
-    // Try to match Lecture_X format first
-    const lectureMatch = kbName.match(/[Ll]ecture[_\s]*(\d+)/i);
-    if (lectureMatch) {
-        return `lecture_${lectureMatch[1]}`;
-    }
-    
-    // Try to match Chapter_X format
-    const chapterMatch = kbName.match(/[Cc]hapter[_\s]*([A-Za-z]?[\d]+)/i);
-    if (chapterMatch) {
-        const chapterNum = chapterMatch[1];
-        return `chapter_${chapterNum}`;
-    }
-    
-    // Fallback: try to extract any number after "ch"
-    const chMatch = kbName.match(/[Cc]h[_\s]*(\d+)/i);
-    if (chMatch) {
-        return `chapter_${chMatch[1]}`;
-    }
-    
-    // Default fallback
-    return "enhanced_slides";
-}
-
-// Handle LaTeX generation
-async function handleGenerateLatex() {
-    if (!apiKey) {
-        alert(t('alertProvideApiKey'));
-        return;
-    }
-    
-    const kbName = window.currentKnowledgeBaseName;
-    const optimizationResult = window.currentOptimizationResult;
-    
-    if (!kbName || !optimizationResult) {
-        alert('请先完成优化分析');
-        return;
-    }
-    
-    // Get exp_name from form input or window variable
-    const expNameInput = document.getElementById('exp-name');
-    let expName = 'default';
-    if (expNameInput) {
-        expName = expNameInput.value.trim();
-    }
-    if (!expName) {
-        expName = window.currentExpName || 'default';
-    }
-    
-    // Extract chapter name from optimization result or knowledge base name
-    const chapterName = optimizationResult.chapter || extractChapterFromKbName(kbName);
-    
-    // Debug logging
-    console.log('DEBUG: LaTeX Generation - exp_name:', expName, 'chapter_name:', chapterName, 'kbName:', kbName);
-    
-    const generateBtn = document.getElementById('generate-latex-btn');
-    const statusDiv = document.getElementById('latex-generation-status');
-    const linksDiv = document.getElementById('latex-download-links');
-    
-    const originalText = generateBtn.innerHTML;
-    generateBtn.disabled = true;
-    generateBtn.innerHTML = '<span>⏳</span><span>生成中...</span>';
-    
-    statusDiv.style.display = 'block';
-    statusDiv.innerHTML = '<p>' + t('generateLatexLoading') + '</p>';
-    linksDiv.style.display = 'none';
-    
-    try {
-        // Prepare recommendations
-        const recommendations = {
-            recommendations: optimizationResult.recommendations?.recommendations || ""
-        };
-        
-        // Collect user feedback if provided
-        const userFeedback = {
-            slides: document.getElementById('latex-feedback-slides')?.value.trim() || "",
-            overall: document.getElementById('latex-feedback-overall')?.value.trim() || ""
-        };
-        
-        // Build request body with exp_name and chapter_name (DO NOT include output_dir)
-        const requestBody = {
-            knowledge_base_name: kbName,
-            recommendations: recommendations,
-            exp_name: expName,
-            chapter_name: chapterName
-        };
-        
-        if (userFeedback.slides || userFeedback.overall) {
-            requestBody.user_feedback = userFeedback;
-        }
-        
-        // Debug: Log request body
-        console.log('DEBUG: Request body:', JSON.stringify(requestBody, null, 2));
-        
-        // Generate LaTeX
-        const response = await fetch(`${API_BASE_URL}/api/slides/generate-latex`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-OpenAI-API-Key': apiKey
-            },
-            body: JSON.stringify(requestBody)
-        });
-        
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({ detail: 'Generation failed' }));
-            throw new Error(error.detail || 'Failed to generate LaTeX');
-        }
-        
-        const result = await response.json();
-        
-        // Show success message
-        statusDiv.innerHTML = '<p style="color: green;">' + t('generateLatexSuccess') + '</p>';
-        
-        // Show download links - use new path structure: exp/{exp_name}/enhanced_slides/{chapter_name}/
-        let linksHtml = '<h5>下载文件:</h5><ul style="list-style: none; padding: 0;">';
-        
-        // Clean chapter name for URL
-        const cleanChapterName = chapterName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-        const encodedExpName = encodeURIComponent(expName);
-        const encodedChapterName = encodeURIComponent(cleanChapterName);
-        
-        if (result.latex_file) {
-            const latexPath = result.latex_file;
-            const filename = latexPath.split(/[/\\]/).pop();
-            // 构建下载URL：exp/{exp_name}/enhanced_slides/{chapter_name}/{filename}
-            const downloadUrl = `${API_BASE_URL}/api/slides/download/${encodedExpName}/${encodedChapterName}/${filename}`;
-            
-            linksHtml += `<li style="margin: 10px 0;">
-                <a href="${downloadUrl}" class="btn btn-secondary" download target="_blank">
-                    ${t('downloadLatexLabel')}
-                </a>
-                <span style="margin-left: 10px; color: #666;">${filename}</span>
-            </li>`;
-        }
-        
-        if (result.content_file) {
-            const contentPath = result.content_file;
-            const filename = contentPath.split(/[/\\]/).pop();
-            // 构建下载URL
-            const downloadUrl = `${API_BASE_URL}/api/slides/download/${encodedExpName}/${encodedChapterName}/${filename}`;
-            
-            linksHtml += `<li style="margin: 10px 0;">
-                <a href="${downloadUrl}" class="btn btn-secondary" download target="_blank">
-                    ${t('downloadEnhancedContentLabel')}
-                </a>
-                <span style="margin-left: 10px; color: #666;">${filename}</span>
-            </li>`;
-        }
-        
-        linksHtml += '</ul>';
-        linksDiv.innerHTML = linksHtml;
-        linksDiv.style.display = 'block';
-        
-        // Show iterative improvement section after successful generation
-        const improveSection = document.getElementById('latex-improve-section');
-        if (improveSection) {
-            improveSection.style.display = 'block';
-        }
-        
-    } catch (error) {
-        console.error('LaTeX generation error:', error);
-        statusDiv.innerHTML = '<p style="color: red;">' + 
-            t('generateLatexFailed', { message: error.message }) + '</p>';
-    } finally {
-        generateBtn.disabled = false;
-        generateBtn.innerHTML = originalText;
-    }
-}
-
-// Handle iterative improvement with feedback
-async function handleImproveLatex() {
-    if (!apiKey) {
-        alert(t('alertProvideApiKey'));
-        return;
-    }
-    
-    const kbName = window.currentKnowledgeBaseName;
-    const optimizationResult = window.currentOptimizationResult;
-    
-    if (!kbName || !optimizationResult) {
-        alert('请先完成优化分析');
-        return;
-    }
-    
-    // Get exp_name from form input or window variable
-    const expNameInput = document.getElementById('exp-name');
-    let expName = 'default';
-    if (expNameInput) {
-        expName = expNameInput.value.trim();
-    }
-    if (!expName) {
-        expName = window.currentExpName || 'default';
-    }
-    
-    // Extract chapter name from optimization result or knowledge base name
-    const chapterName = optimizationResult.chapter || extractChapterFromKbName(kbName);
-    
-    // Debug logging
-    console.log('DEBUG: LaTeX Improvement - exp_name:', expName, 'chapter_name:', chapterName, 'kbName:', kbName);
-    
-    const improveBtn = document.getElementById('improve-latex-btn');
-    const statusDiv = document.getElementById('latex-generation-status');
-    const linksDiv = document.getElementById('latex-download-links');
-    
-    // Get feedback from user
-    const slidesFeedback = document.getElementById('latex-feedback-slides')?.value.trim() || "";
-    const overallFeedback = document.getElementById('latex-feedback-overall')?.value.trim() || "";
-    
-    if (!slidesFeedback && !overallFeedback) {
-        alert('请先提供反馈意见');
-        return;
-    }
-    
-    const originalText = improveBtn.innerHTML;
-    improveBtn.disabled = true;
-    improveBtn.innerHTML = '<span>⏳</span><span>' + t('improveLoading') + '</span>';
-    
-    statusDiv.style.display = 'block';
-    statusDiv.innerHTML = '<p>' + t('improveLoading') + '</p>';
-    linksDiv.style.display = 'none';
-    
-    try {
-        // Prepare recommendations
-        const recommendations = {
-            recommendations: optimizationResult.recommendations?.recommendations || ""
-        };
-        
-        // Prepare user feedback for improvement
-        const userFeedback = {
-            slides: slidesFeedback,
-            overall: overallFeedback
-        };
-        
-        // Build request body (DO NOT include output_dir)
-        const requestBody = {
-            knowledge_base_name: kbName,
-            recommendations: recommendations,
-            exp_name: expName,
-            chapter_name: chapterName,
-            user_feedback: userFeedback
-        };
-        
-        // Debug: Log request body
-        console.log('DEBUG: Improvement request body:', JSON.stringify(requestBody, null, 2));
-        
-        // Generate improved LaTeX with feedback
-        const response = await fetch(`${API_BASE_URL}/api/slides/generate-latex`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-OpenAI-API-Key': apiKey
-            },
-            body: JSON.stringify(requestBody)
-        });
-        
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({ detail: 'Generation failed' }));
-            throw new Error(error.detail || 'Failed to improve LaTeX');
-        }
-        
-        const result = await response.json();
-        
-        // Show success message
-        statusDiv.innerHTML = '<p style="color: green;">✅ 基于反馈重新生成成功！</p>';
-        
-        // Show download links - use new path structure
-        let linksHtml = '<h5>下载改进后的文件:</h5><ul style="list-style: none; padding: 0;">';
-        
-        // Clean chapter name for URL
-        const cleanChapterName = chapterName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-        const encodedExpName = encodeURIComponent(expName);
-        const encodedChapterName = encodeURIComponent(cleanChapterName);
-        
-        if (result.latex_file) {
-            const latexPath = result.latex_file;
-            const filename = latexPath.split(/[/\\]/).pop();
-            const downloadUrl = `${API_BASE_URL}/api/slides/download/${encodedExpName}/${encodedChapterName}/${filename}`;
-            
-            linksHtml += `<li style="margin: 10px 0;">
-                <a href="${downloadUrl}" class="btn btn-secondary" download target="_blank">
-                    ${t('downloadLatexLabel')}
-                </a>
-                <span style="margin-left: 10px; color: #666;">${filename}</span>
-            </li>`;
-        }
-        
-        if (result.content_file) {
-            const contentPath = result.content_file;
-            const filename = contentPath.split(/[/\\]/).pop();
-            const downloadUrl = `${API_BASE_URL}/api/slides/download/${encodedExpName}/${encodedChapterName}/${filename}`;
-            
-            linksHtml += `<li style="margin: 10px 0;">
-                <a href="${downloadUrl}" class="btn btn-secondary" download target="_blank">
-                    ${t('downloadEnhancedContentLabel')}
-                </a>
-                <span style="margin-left: 10px; color: #666;">${filename}</span>
-            </li>`;
-        }
-        
-        linksHtml += '</ul>';
-        linksDiv.innerHTML = linksHtml;
-        linksDiv.style.display = 'block';
-        
-    } catch (error) {
-        console.error('LaTeX improvement error:', error);
-        statusDiv.innerHTML = '<p style="color: red;">❌ 改进失败: ' + error.message + '</p>';
-    } finally {
-        improveBtn.disabled = false;
-        improveBtn.innerHTML = originalText;
-    }
 }
 

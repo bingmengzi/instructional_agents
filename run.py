@@ -4,6 +4,7 @@ import argparse
 import json
 
 from src.ADDIE import ADDIE
+from src.ADDIE_optimize import ADDIEOptimizer
 
 
 def load_catalog(catalog_dir: str = "catalog", catalog_name: str = "merged_catalog") -> dict:
@@ -111,6 +112,39 @@ def run_instructional_design(course_name: str, copilot = None, catalog = None, m
     print("="*80 + "\n")
 
 
+def run_optimization(storage_id: str, user_requirements: str, model_name: str = "gpt-4o-mini",
+                     exp_name: str = "optimize", chapter_name: str = None):
+    """
+    Run the optimization workflow on existing slide materials.
+
+    Args:
+        storage_id: ID of the stored PDF files
+        user_requirements: User's requirements for improvement
+        model_name: Name of the LLM model to use
+        exp_name: Experiment name for output directory
+        chapter_name: Specific chapter to optimize (None = all chapters)
+    """
+    # Ensure the OPENAI_API_KEY is set
+    if not os.environ.get("OPENAI_API_KEY"):
+        api_key = input("Please enter your OpenAI API key: ").strip()
+        if not api_key:
+            print("Error: OpenAI API key is required to run this workflow.")
+            return
+        os.environ["OPENAI_API_KEY"] = api_key
+
+    output_dir = f"./exp/{exp_name}/"
+    os.makedirs(output_dir, exist_ok=True)
+
+    optimizer = ADDIEOptimizer(model_name=model_name)
+    optimizer.run(
+        storage_id=storage_id,
+        user_requirements=user_requirements,
+        output_dir=output_dir,
+        exp_name=exp_name,
+        chapter_name=chapter_name,
+    )
+
+
 if __name__ == "__main__":
     with open("config.json", "r") as f:
         config = json.load(f)
@@ -122,7 +156,7 @@ if __name__ == "__main__":
     parser.add_argument("course_name", type=str, help="Name of the course")
 
     parser.add_argument(
-        "--copilot", 
+        "--copilot",
         type=str,
         nargs='?',  # optional, provided with string if available
         const="default_copilot",  # If user provides --copilot but no value, use "default"
@@ -130,7 +164,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--catalog", 
+        "--catalog",
         type=str,
         nargs='?',  # optional, provided with string if available
         const="default_catalog",  # If user provides --catalog but no value, use "default"
@@ -138,26 +172,65 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--model", 
-        type=str, 
+        "--model",
+        type=str,
         default="gpt-4o-mini",
         help="OpenAI model to use (default: gpt-4o-mini)"
     )
 
     parser.add_argument(
-        "--exp", 
+        "--exp",
         type=str,
         default="test",
         help="Experiment name for logging"
     )
 
+    # Optimize mode arguments
+    parser.add_argument(
+        "--optimize",
+        type=str,
+        nargs='?',
+        const=None,
+        default=False,
+        help="Optimize mode: provide storage_id of uploaded PDFs"
+    )
+
+    parser.add_argument(
+        "--requirements",
+        type=str,
+        default="",
+        help="User requirements for optimization (used with --optimize)"
+    )
+
+    parser.add_argument(
+        "--chapter",
+        type=str,
+        default=None,
+        help="Specific chapter to optimize (used with --optimize)"
+    )
+
     args = parser.parse_args()
 
-    # Run workflow with specified options
-    run_instructional_design(
-        course_name=args.course_name,
-        copilot=args.copilot,
-        catalog=args.catalog,
-        model_name=args.model,
-        exp_name=args.exp,
-    )
+    # Determine which mode to run
+    if args.optimize is not False:
+        # Optimize mode
+        if args.optimize is None:
+            print("Error: --optimize requires a storage_id value.")
+            print("Usage: python run.py <course_name> --optimize <storage_id> --requirements \"...\"")
+            exit(1)
+        run_optimization(
+            storage_id=args.optimize,
+            user_requirements=args.requirements,
+            model_name=args.model,
+            exp_name=args.exp,
+            chapter_name=args.chapter,
+        )
+    else:
+        # Generate mode (default)
+        run_instructional_design(
+            course_name=args.course_name,
+            copilot=args.copilot,
+            catalog=args.catalog,
+            model_name=args.model,
+            exp_name=args.exp,
+        )

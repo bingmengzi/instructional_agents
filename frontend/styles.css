@@ -113,6 +113,36 @@ body {
 }
 
 /* 卡片设计 */
+/* Mode Toggle */
+.mode-toggle {
+    display: flex;
+    gap: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--primary-teal);
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 14px 24px;
+    border: none;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.mode-btn.active {
+    background: var(--primary-teal);
+    color: white;
+}
+
+.mode-btn:not(.active):hover {
+    background: var(--bg-secondary);
+}
+
 .card {
     background: var(--bg-card);
     border-radius: 16px;
