@@ -32,7 +32,7 @@ import shutil
 app = FastAPI(
     title="Instructional Agents API",
     description="API for automated course material generation",
-    version="1.0.0"
+    version="1.1.0"
 )
 
 # CORS configuration
@@ -92,7 +92,7 @@ async def health_check():
     
     return {
         "status": status,
-        "version": "1.0.0",
+        "version": "1.1.0",
         "timestamp": datetime.now().isoformat()
     }
 

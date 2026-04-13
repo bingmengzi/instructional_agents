@@ -43,13 +43,15 @@ An AI-powered instructional design system based on the ADDIE model for automated
 
 ### 📦 Releases
 
-> **[2026.3.26]** Published on [PyPI](https://pypi.org/project/instructional-agents/) - `pip install instructional-agents`
+> **[2026.4.13]** Release [v1.1.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - Added [LaTeX-to-PPTX conversion](#latex-to-pptx-conversion) with pptxgenjs, Slide Masters, react-icons, and shadow effects
 >
-> **[2026.1.6]** Release [v1.0.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - Initial release with core features - Thanks to all the contributors! ❤️
+> **[2026.3.26]** Published on [PyPI](https://pypi.org/project/instructional-agents/) - `pip install instructional-agents`
 
 <details>
 <summary>History releases</summary>
 
+> **[2026.1.6]** [v1.0.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - Initial release with core features - Thanks to all the contributors! ❤️
+>
 > **[2026.1.4]** [v0.1.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - Docker deployment and web interface support
 
 </details>
