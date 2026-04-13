@@ -23,6 +23,7 @@ config.json
 # IDE
 .idea/
 .vscode/
+.claude/
 *.code-workspace
 
 # OS
