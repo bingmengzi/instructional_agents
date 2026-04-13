@@ -74,6 +74,12 @@
 | 🎨 **PowerPoint (PPTX) 导出** | 通过 pptxgenjs 将 LaTeX Beamer 幻灯片转换为精美的 PPTX，支持图标、阴影和 Slide Masters |
 | ✅ **自动评估** | 内置评估系统，用于评估生成的课程材料 |
 
+### 🎬 工作流程
+
+<p align="center">
+  <img src="docs/process-video.gif" alt="ADDIE 流程：多智能体协作过程" width="720">
+</p>
+
 ---
 
 ## 🚀 快速开始（Docker 方式 - 推荐）
