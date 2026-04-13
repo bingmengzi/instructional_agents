@@ -58,6 +58,7 @@ class CourseRequest(BaseModel):
     copilot: Optional[bool] = Field(default=False, description="Enable copilot mode")
     catalog: Optional[str] = Field(default=None, description="Catalog name to use")
     catalog_data: Optional[Dict[str, Any]] = Field(default=None, description="Catalog data as JSON object")
+    generate_pptx: Optional[bool] = Field(default=False, description="Also generate PPTX slides")
 
 class OptimizeRequest(BaseModel):
     storage_id: str = Field(..., description="ID of the stored PDF files")
@@ -157,6 +158,29 @@ async def generate_course(
         "task_id": task_id,
         "status": "started",
         "message": "Course generation started"
+    }
+
+@app.post("/api/course/convert-pptx/{task_id}")
+async def convert_to_pptx(task_id: str):
+    """Convert existing .tex files to .pptx for a completed task."""
+    if task_id not in tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task = tasks[task_id]
+    exp_name = task.get("exp_name", "default")
+    exp_dir = f"./exp/{exp_name}/"
+
+    if not os.path.exists(exp_dir):
+        raise HTTPException(status_code=404, detail=f"Experiment directory not found: {exp_dir}")
+
+    from src.latex_to_pptx import LaTeXToPPTXConverter
+    converter = LaTeXToPPTXConverter()
+    results = converter.convert_directory(exp_dir)
+
+    return {
+        "task_id": task_id,
+        "converted_files": len(results),
+        "files": results
     }
 
 @app.get("/api/course/status/{task_id}", response_model=TaskStatus)
@@ -781,6 +805,18 @@ async def run_generation_task(task_id: str, request: CourseRequest, api_key: str
             exp_name=request.exp_name
         )
         
+        # Generate PPTX if requested
+        if request.generate_pptx:
+            print("\n📊 Generating PPTX slides...")
+            try:
+                from src.latex_to_pptx import LaTeXToPPTXConverter
+                converter = LaTeXToPPTXConverter()
+                exp_dir = f"./exp/{request.exp_name}/"
+                pptx_results = converter.convert_directory(exp_dir)
+                print(f"✅ Generated {len(pptx_results)} PPTX files")
+            except Exception as pptx_err:
+                print(f"⚠️ PPTX generation failed: {pptx_err}")
+
         # Mark as completed
         print("\n" + "=" * 60)
         print("✅ Course generation completed successfully!")

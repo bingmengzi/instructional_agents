@@ -236,6 +236,27 @@ class LaTeXCompiler:
         if failed_count > 0:
             self.logger.info("Check the compilation logs in the cache directory for details on failed compilations")
 
+    def generate_pptx(self):
+        """Convert all .tex files to .pptx (independent of PDF compilation)."""
+        from src.latex_to_pptx import LaTeXToPPTXConverter
+        converter = LaTeXToPPTXConverter()
+
+        tex_files = self.find_latex_files()
+        if not tex_files:
+            self.logger.info("No LaTeX files found for PPTX conversion")
+            return
+
+        converted = 0
+        for tex_file in tex_files:
+            try:
+                output_path = tex_file.with_suffix('.pptx')
+                converter.convert(str(tex_file), str(output_path))
+                converted += 1
+            except Exception as e:
+                self.logger.error(f"PPTX conversion failed for {tex_file.name}: {e}")
+
+        self.logger.info(f"PPTX conversion complete: {converted}/{len(tex_files)} files")
+
 # Example usage:
 if __name__ == "__main__":
     output_directory = "/home/ubuntu/EduAgents/exp/30dm"

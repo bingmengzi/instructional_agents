@@ -32,6 +32,17 @@ docker-compose logs -f api
 - 健康检查：http://localhost:8000/health
 - 前端界面：打开 `frontend/index.html`（需要配置 API 地址）
 
+## Docker 镜像包含的内容
+
+Docker 镜像包含了完整功能所需的所有依赖：
+
+- **Python 3.11** 及所有 pip 依赖
+- **LaTeX** (texlive) 用于 PDF 幻灯片编译
+- **Node.js 20** + pptxgenjs 用于 PPTX 生成
+- **react-icons + sharp** 用于幻灯片图标
+
+无需额外配置——容器内即可直接生成 PPTX 文件。
+
 ## 目录结构
 
 ```
@@ -40,6 +51,7 @@ docker-compose logs -f api
 ├── docker-compose.yml      # Docker Compose 配置
 ├── .dockerignore          # Docker 忽略文件
 ├── requirements.txt       # Python 依赖
+├── src/build_pptx.js      # pptxgenjs PPTX 构建器（Node.js）
 ├── api_server.py         # FastAPI 服务器
 ├── .env                  # 环境变量（不提交到 Git）
 ├── exp/                  # 生成的结果（挂载为 Volume）
@@ -196,8 +208,13 @@ python -c "import os; print(os.environ.get('OPENAI_API_KEY'))"
    - 检查容器内是否有 pdflatex：`docker-compose exec api which pdflatex`
    - 查看编译日志：`exp/{exp_name}/.cache/`
 
-4. **内存不足**
-   - LaTeX 编译需要较多内存
+4. **PPTX 生成失败**
+   - 检查 Node.js 是否可用：`docker-compose exec api node --version`
+   - 检查 pptxgenjs 是否安装：`docker-compose exec api node -e "require('pptxgenjs')"`
+   - 检查 NODE_PATH：`docker-compose exec api npm root -g`
+
+5. **内存不足**
+   - LaTeX 编译和 PPTX 生成需要较多内存
    - 增加 Docker 内存限制或使用更大的实例
 
 ## 更新和维护

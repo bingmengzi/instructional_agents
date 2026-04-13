@@ -68,6 +68,7 @@ An AI-powered instructional design system based on the ADDIE model for automated
 | 🌐 **Web Interface** | User-friendly web interface for course generation, progress monitoring, and file management |
 | 📁 **Multiple Usage Methods** | Support for web interface, command-line, and RESTful API |
 | 📄 **LaTeX/PDF Output** | Generate professional LaTeX slides and compile to PDF format |
+| 🎨 **PowerPoint (PPTX) Export** | Convert LaTeX Beamer slides to visually rich PPTX using pptxgenjs with icons, shadows, and Slide Masters |
 | ✅ **Automatic Evaluation** | Built-in evaluation system for assessing generated course materials |
 
 ---
@@ -262,6 +263,7 @@ exp/{experiment_name}/
 ├── chapter_1/                             # Chapter 1 materials
 │   ├── slides.tex                         # LaTeX source
 │   ├── slides.pdf                         # Compiled PDF slides (⭐ ready to use)
+│   ├── slides.pptx                        # PowerPoint slides (⭐ editable)
 │   ├── script.md                          # Presentation script
 │   ├── assessment.md                      # Assessment materials
 │   └── statistics_slides_chapter_1.json   # Chapter statistics
@@ -318,16 +320,28 @@ For developers who want to run the system locally from source:
   - macOS: `brew install --cask mactex`
   - Ubuntu: `sudo apt-get install texlive-full`
   - Windows: Install [MiKTeX](https://miktex.org/)
+- Node.js 18+ (for PPTX generation)
+  - macOS: `brew install node`
+  - Ubuntu: `sudo apt-get install nodejs npm`
+  - Windows: Install from [nodejs.org](https://nodejs.org/)
 
 ### 2. Install Dependencies
 
 ```bash
-# From source
+# Python dependencies
 pip install -r requirements.txt
 
 # Or install in editable mode
 pip install -e .
+
+# Node.js dependencies (for PPTX generation)
+npm install -g pptxgenjs
+
+# Optional: install react-icons for slide icons (recommended)
+npm install -g react-icons react react-dom sharp
 ```
+
+> **Note**: `pptxgenjs` is required for LaTeX-to-PPTX conversion. The `react-icons` + `sharp` packages are optional but recommended — they add topic-specific icons to each slide (e.g., 🤖 for agent topics, 🧠 for AI topics). Without them, slides will use simple geometric shapes instead.
 
 ### 3. Configuration
 
@@ -518,6 +532,37 @@ python evaluate.py --exp web_dev_v1
 ```
 
 Evaluation results are saved in `eval/{experiment_name}/` directory.
+
+### LaTeX-to-PPTX Conversion
+
+Convert generated LaTeX Beamer slides to editable PowerPoint presentations with professional design:
+
+```bash
+# Convert a single chapter
+python -c "
+from src.latex_to_pptx import LaTeXToPPTXConverter
+converter = LaTeXToPPTXConverter()
+converter.convert('exp/my_course/chapter_1/slides.tex', 'exp/my_course/chapter_1/slides.pptx')
+"
+
+# Convert all chapters in a course
+python -c "
+from src.latex_to_pptx import LaTeXToPPTXConverter
+converter = LaTeXToPPTXConverter()
+converter.convert_directory('exp/my_course/')
+"
+```
+
+**PPTX Design Features:**
+- 🎨 **Midnight Executive palette** — navy/ice-blue/orange color scheme with Georgia/Calibri fonts
+- 📐 **Slide Masters** — consistent layouts via `CONTENT_MASTER`, `CONTENT_CODE`, and `DARK_MASTER`
+- 🌓 **Dark/light sandwich** — dark slides for title/conclusion, light for content
+- 🔤 **Smart icons** — topic-aware icons from react-icons (robot, brain, code, etc.) in colored circles
+- 🎭 **Varied layouts** — auto-detected: single-text, list-only, blocks, code, columns, mixed
+- 💫 **Visual polish** — shadows on blocks/code, sidebar accent motif, decorative circles
+- 📏 **Typography** — 36pt+ titles, 14-16pt body, auto-scaling for long titles
+
+**Architecture**: `LaTeX .tex → [Python LaTeXParser] → JSON → [Node.js pptxgenjs] → .pptx`
 
 ### Background Execution with Logging
 

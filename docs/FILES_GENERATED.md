@@ -66,7 +66,13 @@ Each chapter generates the following files in `exp/{experiment_name}/chapter_{nu
    - Automatically compiled from `slides.tex`
    - Generated: After LaTeX compilation completes
 
-3. **`script.md`**
+3. **`slides.pptx`** (if Node.js + pptxgenjs installed)
+   - 📊 Editable PowerPoint slides
+   - Converted from `slides.tex` via pptxgenjs (Node.js)
+   - Features: professional design with Slide Masters, icons, shadows, dark/light sandwich layout
+   - Generated: Via `LaTeXToPPTXConverter` (see README for usage)
+
+4. **`script.md`**
    - 📝 Presentation script
    - Contains detailed explanation content and instructions
    - Generated: After slide script generation completes
@@ -100,6 +106,7 @@ exp/{experiment_name}/
 ├── chapter_1/                              # Chapter 1
 │   ├── slides.tex
 │   ├── slides.pdf
+│   ├── slides.pptx
 │   ├── script.md
 │   ├── assessment.md
 │   └── statistics_slides_chapter_1.json
@@ -107,6 +114,7 @@ exp/{experiment_name}/
 ├── chapter_2/                              # Chapter 2
 │   ├── slides.tex
 │   ├── slides.pdf
+│   ├── slides.pptx
 │   ├── script.md
 │   ├── assessment.md
 │   └── statistics_slides_chapter_2.json
@@ -169,8 +177,9 @@ exp/{experiment_name}/
 ### Priority Downloads:
 1. **`result_syllabus_design.md`** - Understand course structure
 2. **`processed_chapters.json`** - View chapter list
-3. **`chapter_*/slides.pdf`** - Directly usable slides
-4. **`chapter_*/script.md`** - Teaching scripts
+3. **`chapter_*/slides.pdf`** - Directly usable slides (PDF)
+4. **`chapter_*/slides.pptx`** - Editable slides (PowerPoint)
+5. **`chapter_*/script.md`** - Teaching scripts
 
 ### Download as Needed:
 - Other foundation deliberation files (for reference)
@@ -191,6 +200,7 @@ In the frontend interface, different file types display different icons:
 - 📝 Markdown files (.md)
 - 📄 LaTeX files (.tex)
 - 📕 PDF files (.pdf)
+- 📊 PowerPoint files (.pptx)
 - 📋 JSON files (.json)
 - 📄 Other text files
 - 🐍 Python files (.py)

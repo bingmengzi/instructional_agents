@@ -95,6 +95,7 @@ const translations = {
         uploadCatalogFailed: '上传 Catalog 文件失败',
         modeGenerate: '生成新课程',
         modeOptimize: '优化已有材料',
+        pptxLabel: '同时生成 PPTX 幻灯片',
         optimizeSectionTitle: '优化配置',
         optimizeSubmitButton: '<span>🔧</span><span>开始优化</span>',
         optimizeProgressTitle: '优化进度',
@@ -235,6 +236,7 @@ const translations = {
         uploadCatalogFailed: 'Failed to upload catalog file',
         modeGenerate: 'Generate Course',
         modeOptimize: 'Optimize Materials',
+        pptxLabel: 'Also generate PPTX slides',
         optimizeSectionTitle: 'Optimization Settings',
         optimizeSubmitButton: '<span>🔧</span><span>Start Optimization</span>',
         optimizeProgressTitle: 'Optimization Progress',
@@ -669,7 +671,8 @@ async function handleFormSubmit(e) {
             course_name: document.getElementById('course-name').value,
             model_name: document.getElementById('model-name').value,
             exp_name: document.getElementById('exp-name').value || 'default',
-            copilot: document.getElementById('copilot-mode').checked
+            copilot: document.getElementById('copilot-mode').checked,
+            generate_pptx: document.getElementById('pptx-mode').checked
         };
 
         // Handle catalog

@@ -38,6 +38,7 @@ dependencies = [
     "PyPDF2>=3.0.0",
     "pdfplumber>=0.10.0",
     "numpy>=1.24.0",
+    "markitdown[pptx]>=0.1.0",
 ]
 
 [project.optional-dependencies]
@@ -65,6 +66,7 @@ include = ["src*"]
     "frontend/*.html",
     "frontend/*.js",
     "frontend/*.css",
+    "src/*.js",
 ]
 
 [tool.pytest.ini_options]

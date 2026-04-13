@@ -3,9 +3,6 @@ import time
 import argparse
 import json
 
-from src.ADDIE import ADDIE
-from src.ADDIE_optimize import ADDIEOptimizer
-
 
 def load_catalog(catalog_dir: str = "catalog", catalog_name: str = "merged_catalog") -> dict:
     if catalog_dir == "copilot" and catalog_name == "default_copilot":
@@ -94,6 +91,7 @@ def run_instructional_design(course_name: str, copilot = None, catalog = None, m
     print("Using catalog data for the workflow.")
 
 
+    from src.ADDIE import ADDIE
     addie = ADDIE(course_name, model_name=model_name, copilot=use_copilot, catalog=use_catalog, data_catalog=data_catalog, data_copilot=data_copilot, seed=seed, temperature=temperature)
 
     # Run the workflow
@@ -135,6 +133,7 @@ def run_optimization(storage_id: str, user_requirements: str, model_name: str = 
     output_dir = f"./exp/{exp_name}/"
     os.makedirs(output_dir, exist_ok=True)
 
+    from src.ADDIE_optimize import ADDIEOptimizer
     optimizer = ADDIEOptimizer(model_name=model_name)
     optimizer.run(
         storage_id=storage_id,
@@ -157,7 +156,8 @@ def main():
     # Set up command line arguments
     parser = argparse.ArgumentParser(description="Run instructional design workflow")
 
-    parser.add_argument("course_name", type=str, help="Name of the course")
+    parser.add_argument("course_name", type=str, nargs='?', default=None,
+                        help="Name of the course (not required for --convert-pptx)")
 
     parser.add_argument(
         "--copilot",
@@ -227,7 +227,39 @@ def main():
         help="Specific chapter to optimize (used with --optimize)"
     )
 
+    # PPTX conversion arguments
+    parser.add_argument(
+        "--pptx",
+        action="store_true",
+        help="Also generate PPTX slides alongside PDF during course generation"
+    )
+
+    parser.add_argument(
+        "--convert-pptx",
+        type=str,
+        default=None,
+        metavar="DIR",
+        help="Convert existing .tex files to .pptx. Provide exp directory path (e.g., ./exp/my_course/)"
+    )
+
     args = parser.parse_args()
+
+    # PPTX-only conversion mode (no ADDIE workflow, no API key needed)
+    if args.convert_pptx is not None:
+        from src.latex_to_pptx import LaTeXToPPTXConverter
+        converter = LaTeXToPPTXConverter()
+        results = converter.convert_directory(args.convert_pptx)
+        if results:
+            print(f"\nGenerated {len(results)} PPTX files:")
+            for r in results:
+                print(f"  {r}")
+        else:
+            print("No .tex files found to convert.")
+        return
+
+    # course_name is required for generate/optimize modes
+    if not args.course_name:
+        parser.error("course_name is required for generate/optimize modes")
 
     # Determine which mode to run
     if args.optimize is not False:
