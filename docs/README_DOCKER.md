@@ -32,6 +32,17 @@ docker-compose logs -f api
 - Health Check: http://localhost:8000/health
 - Frontend Interface: Open `frontend/index.html` (need to configure API address)
 
+## What's Included in the Docker Image
+
+The Docker image includes all dependencies needed for full functionality:
+
+- **Python 3.11** with all pip dependencies
+- **LaTeX** (texlive) for PDF slide compilation
+- **Node.js 20** with pptxgenjs for PPTX generation
+- **react-icons + sharp** for slide icons
+
+No additional setup is required — PPTX generation works out of the box inside the container.
+
 ## Directory Structure
 
 ```
@@ -40,6 +51,7 @@ docker-compose logs -f api
 ├── docker-compose.yml      # Docker Compose configuration
 ├── .dockerignore          # Docker ignore file
 ├── requirements.txt       # Python dependencies
+├── src/build_pptx.js      # pptxgenjs PPTX builder (Node.js)
 ├── api_server.py         # FastAPI server
 ├── .env                  # Environment variables (not committed to Git)
 ├── exp/                  # Generated results (mounted as Volume)
@@ -196,8 +208,13 @@ python -c "import os; print(os.environ.get('OPENAI_API_KEY'))"
    - Check if pdflatex exists in container: `docker-compose exec api which pdflatex`
    - View compilation logs: `exp/{exp_name}/.cache/`
 
-4. **Insufficient Memory**
-   - LaTeX compilation requires more memory
+4. **PPTX Generation Failed**
+   - Check if Node.js is available: `docker-compose exec api node --version`
+   - Check if pptxgenjs is installed: `docker-compose exec api node -e "require('pptxgenjs')"`
+   - Check NODE_PATH: `docker-compose exec api npm root -g`
+
+5. **Insufficient Memory**
+   - LaTeX compilation and PPTX generation require more memory
    - Increase Docker memory limit or use larger instance
 
 ## Updates and Maintenance

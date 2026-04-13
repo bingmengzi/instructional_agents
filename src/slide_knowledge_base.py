@@ -1,6 +1,6 @@
 """
 Slide Knowledge Base
-使用向量数据库存储PDF幻灯片内容，支持语义搜索
+Store PDF slide content using a vector database with semantic search support
 """
 
 import os
@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import numpy as np
 
-# 可以选择使用chromadb或简单的embedding存储
+# Can choose to use chromadb or simple embedding storage
 try:
     import chromadb
     CHROMADB_AVAILABLE = True
@@ -28,7 +28,7 @@ except ImportError:
 
 
 class SlideKnowledgeBase:
-    """幻灯片知识库，存储和检索PDF内容"""
+    """Slide knowledge base for storing and retrieving PDF content"""
     
     def __init__(self, knowledge_base_name: str, kb_dir: str = "knowledge_base"):
         self.kb_name = knowledge_base_name
@@ -37,19 +37,19 @@ class SlideKnowledgeBase:
         
         if OPENAI_AVAILABLE:
             self.client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-            self.embedding_model = "text-embedding-3-small"  # 或 "text-embedding-ada-002"
+            self.embedding_model = "text-embedding-3-small"  # or "text-embedding-ada-002"
         else:
             self.client = None
             self.embedding_model = None
         
-        # 初始化向量数据库
+        # Initialize vector database
         if CHROMADB_AVAILABLE:
             self._init_chromadb()
         else:
             self._init_simple_storage()
     
     def _init_chromadb(self):
-        """初始化ChromaDB向量数据库"""
+        """Initialize ChromaDB vector database"""
         chroma_dir = self.kb_dir / "chroma_db"
         self.chroma_client = chromadb.PersistentClient(path=str(chroma_dir))
         self.collection = self.chroma_client.get_or_create_collection(
@@ -59,14 +59,14 @@ class SlideKnowledgeBase:
         self.use_chromadb = True
     
     def _init_simple_storage(self):
-        """使用简单的文件存储"""
+        """Use simple file-based storage"""
         self.embeddings_file = self.kb_dir / "embeddings.pkl"
         self.data_file = self.kb_dir / "chunks.json"
         self.embeddings = {}
         self.chunks = []
         self.use_chromadb = False
         
-        # 加载已有数据
+        # Load existing data
         if self.data_file.exists():
             with open(self.data_file, 'r', encoding='utf-8') as f:
                 self.chunks = json.load(f)
@@ -80,11 +80,11 @@ class SlideKnowledgeBase:
         chapter_filter: Optional[str] = None
     ):
         """
-        从按需提取的数据创建知识库
-        
+        Create knowledge base from on-demand extracted data
+
         Args:
-            extracted_data: PDF处理器返回的提取数据
-            chapter_filter: 章节过滤器（用于标记）
+            extracted_data: Extracted data returned by the PDF processor
+            chapter_filter: Chapter filter (used for tagging)
         """
         print(f"Creating knowledge base from {extracted_data['total_extracted_files']} extracted files...")
         
@@ -93,7 +93,7 @@ class SlideKnowledgeBase:
             if "error" in slide_deck or not slide_deck.get("slide_structure"):
                 continue
             
-            # 只处理提取的幻灯片
+            # Only process extracted slides
             for slide in slide_deck["slide_structure"]:
                 chunk = {
                     "id": f"{slide_deck['pdf_name']}_slide_{slide['slide_number']}",
@@ -122,20 +122,20 @@ class SlideKnowledgeBase:
                 "message": "No content extracted"
             }
         
-        # 生成embeddings并存储
+        # Generate embeddings and store
         print(f"Generating embeddings for {len(chunks)} chunks...")
         for i, chunk in enumerate(chunks):
             if (i + 1) % 10 == 0:
                 print(f"  Progress: {i + 1}/{len(chunks)}")
             
-            # 生成embedding
+            # Generate embedding
             text_to_embed = f"{chunk['title']}\n{chunk['content']}"
             embedding = self._generate_embedding(text_to_embed)
             
             if embedding is None:
                 continue
             
-            # 存储到向量数据库
+            # Store in vector database
             if self.use_chromadb:
                 try:
                     self.collection.add(
@@ -150,19 +150,19 @@ class SlideKnowledgeBase:
                 self.embeddings[chunk["id"]] = embedding
                 self.chunks.append(chunk)
         
-        # 保存数据
+        # Save data
         if not self.use_chromadb:
             with open(self.data_file, 'w', encoding='utf-8') as f:
                 json.dump(self.chunks, f, indent=2, ensure_ascii=False)
             with open(self.embeddings_file, 'wb') as f:
                 pickle.dump(self.embeddings, f)
         
-        # 无论使用哪种存储方式，都保存chunks.json以便后续使用
+        # Regardless of storage method, save chunks.json for later use
         chunks_json_file = self.kb_dir / "chunks.json"
         with open(chunks_json_file, 'w', encoding='utf-8') as f:
             json.dump(chunks, f, indent=2, ensure_ascii=False)
         
-        # 保存元数据
+        # Save metadata
         metadata = {
             "knowledge_base_name": self.kb_name,
             "created_at": datetime.now().isoformat(),
@@ -181,16 +181,16 @@ class SlideKnowledgeBase:
         return metadata
     
     def _generate_embedding(self, text: str) -> Optional[List[float]]:
-        """生成文本的embedding"""
+        """Generate embedding for text"""
         if not self.client or not self.embedding_model:
-            # 如果没有OpenAI客户端，返回None或使用简单的方法
+            # If no OpenAI client, return None or use a simple method
             print("Warning: OpenAI client not available, skipping embedding generation")
             return None
         
         try:
             response = self.client.embeddings.create(
                 model=self.embedding_model,
-                input=text[:8000]  # 限制长度
+                input=text[:8000]  # Limit length
             )
             return response.data[0].embedding
         except Exception as e:
@@ -199,20 +199,20 @@ class SlideKnowledgeBase:
     
     def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """
-        语义搜索相关内容
-        
+        Semantic search for relevant content
+
         Args:
-            query: 搜索查询
-            top_k: 返回前k个结果
-            
+            query: Search query
+            top_k: Return top k results
+
         Returns:
-            相关内容的列表
+            List of relevant content
         """
         if not self.client:
-            # 如果没有embedding能力，返回空列表或使用关键词搜索
+            # If no embedding capability, return empty list or use keyword search
             return self._keyword_search(query, top_k)
         
-        # 生成查询的embedding
+        # Generate embedding for the query
         query_embedding = self._generate_embedding(query)
         
         if query_embedding is None:
@@ -225,7 +225,7 @@ class SlideKnowledgeBase:
                     n_results=top_k
                 )
                 
-                # 格式化结果
+                # Format results
                 formatted_results = []
                 if results.get("ids") and len(results["ids"]) > 0:
                     for i in range(len(results["ids"][0])):
@@ -240,13 +240,13 @@ class SlideKnowledgeBase:
                 print(f"Error searching chromadb: {e}")
                 return self._keyword_search(query, top_k)
         else:
-            # 简单的余弦相似度搜索
+            # Simple cosine similarity search
             similarities = []
             for chunk_id, embedding in self.embeddings.items():
                 similarity = self._cosine_similarity(query_embedding, embedding)
                 similarities.append((similarity, chunk_id))
             
-            # 排序并返回top_k
+            # Sort and return top_k
             similarities.sort(reverse=True, key=lambda x: x[0])
             results = []
             
@@ -263,12 +263,12 @@ class SlideKnowledgeBase:
             return results
     
     def _keyword_search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        """使用关键词搜索（备用方案）"""
+        """Keyword search (fallback method)"""
         query_lower = query.lower()
         keywords = [w for w in query_lower.split() if len(w) > 2]
         
         results = []
-        for chunk in self.chunks[:100]:  # 限制搜索范围
+        for chunk in self.chunks[:100]:  # Limit search scope
             text = f"{chunk.get('title', '')} {chunk.get('content', '')}".lower()
             score = sum(1 for keyword in keywords if keyword in text)
             
@@ -284,7 +284,7 @@ class SlideKnowledgeBase:
         return results[:top_k]
     
     def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
-        """计算余弦相似度"""
+        """Calculate cosine similarity"""
         try:
             vec1 = np.array(vec1)
             vec2 = np.array(vec2)
@@ -301,7 +301,7 @@ class SlideKnowledgeBase:
             return 0.0
     
     def get_all_content_summary(self) -> Dict[str, Any]:
-        """获取知识库内容的摘要"""
+        """Get a summary of the knowledge base contents"""
         if self.use_chromadb:
             try:
                 count = self.collection.count()
@@ -319,6 +319,6 @@ class SlideKnowledgeBase:
             return {
                 "total_chunks": len(self.chunks),
                 "type": "simple_storage",
-                "chunks": self.chunks[:10]  # 返回前10个作为示例
+                "chunks": self.chunks[:10]  # Return first 10 as examples
             }
 

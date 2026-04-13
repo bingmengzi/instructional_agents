@@ -11,11 +11,11 @@ from src.agents import (
 
 
 class SlideUtils:
-    """工具类：提供幻灯片相关的可复用工具函数"""
+    """Utility class: provides reusable utility functions for slides"""
     
     @staticmethod
     def get_latex_template(catalog: bool = False, template_path: Optional[str] = None) -> str:
-        """获取LaTeX模板"""
+        """Get LaTeX template"""
         default_template = r"""
 \documentclass{beamer}
 
@@ -88,7 +88,7 @@ frame=single
     
     @staticmethod
     def parse_latex_template(latex_template: str) -> Tuple[str, str]:
-        """解析LaTeX模板，分离prefix和suffix"""
+        """Parse LaTeX template, separating prefix and suffix"""
         begin_doc = latex_template.find("\\begin{document}")
         end_doc = latex_template.find("\\end{document}")
         
@@ -101,14 +101,14 @@ frame=single
             suffix = "\n\n\\end{document}"
             return prefix, suffix
         else:
-            # 没有找到标准结构，假设整个模板是prefix
+            # Standard structure not found, assume entire template is prefix
             prefix = latex_template + "\n\n\\begin{document}\n"
             suffix = "\n\\end{document}"
             return prefix, suffix
     
     @staticmethod
     def extract_latex_frames(latex_source: str) -> List[str]:
-        """从LaTeX源代码中提取所有frame"""
+        """Extract all frames from LaTeX source code"""
         frame_pattern = re.compile(r'\\begin{frame}.*?\\end{frame}', re.DOTALL)
         frames = frame_pattern.findall(latex_source)
         return frames
@@ -119,15 +119,15 @@ frame=single
         frames: List[str],
         suffix: str
     ) -> str:
-        """编译完整的LaTeX文档"""
+        """Compile a complete LaTeX document"""
         latex_source = prefix + "\n\n" + "\n\n".join(frames) + "\n\n" + suffix
         
-        # 验证文档结构
+        # Validate document structure
         match = re.search(r"\\documentclass.*?\\begin\{document\}.*?\\end\{document\}", latex_source, re.DOTALL)
         if match:
             return match.group()
         else:
-            return latex_source  # 即使不匹配也返回，让调用者决定
+            return latex_source  # Return even if no match, let the caller decide
     
     @staticmethod
     def generate_latex_frame_prompt(
@@ -138,7 +138,7 @@ frame=single
         user_feedback: Optional[Dict] = None,
         max_frames: int = 3
     ) -> str:
-        """生成LaTeX frame的提示词"""
+        """Generate prompt for LaTeX frame creation"""
         feedback_text = ""
         if user_feedback:
             feedback_text = f"""
@@ -212,7 +212,7 @@ Separate multiple frames with blank lines.
         user_feedback: Optional[Dict] = None,
         max_frames: int = 3
     ) -> List[str]:
-        """使用Agent从内容生成LaTeX frames"""
+        """Generate LaTeX frames from content using an Agent"""
         prompt = SlideUtils.generate_latex_frame_prompt(
             title=title,
             content=content,
@@ -368,7 +368,7 @@ class SlidesDeliberation:
             }, f, indent=2)
     
     def _get_templates(self):
-        """获取LaTeX模板"""
+        """Get LaTeX template"""
         self.latex_template = SlideUtils.get_latex_template(
             catalog=self.catalog
         )
@@ -851,7 +851,7 @@ class SlidesDeliberation:
         current_frames = self.latex_dict.get(slide_idx, {}).get("frames", [])
         current_frames_text = "\n\n".join([frame["full_frame"] for frame in current_frames]) if current_frames else None
         
-        # 使用工具函数生成prompt
+        # Use utility function to generate prompt
         prompt = SlideUtils.generate_latex_frame_prompt(
             title=slide['title'],
             content=slide_draft,
@@ -874,7 +874,7 @@ class SlidesDeliberation:
         self.time_slides += elapsed_time
         self.token_slides += token_usage
         
-        # 使用工具函数提取frames
+        # Use utility function to extract frames
         frame_matches = SlideUtils.extract_latex_frames(response)
         
         if frame_matches:
@@ -1104,7 +1104,7 @@ class SlidesDeliberation:
         # Add the suffix
         suffix = self.latex_suffix if hasattr(self, 'latex_suffix') else "\n\\end{document}"
         
-        # 使用工具函数编译
+        # Use utility function to compile
         return SlideUtils.compile_latex_document(prefix, frames, suffix)
     
     def _compile_slides_script(self) -> str:

@@ -1,14 +1,23 @@
 # Multi-stage build for Instructional Agents API
 FROM python:3.11-slim as base
 
-# Install system dependencies including LaTeX
+# Install system dependencies including LaTeX and Node.js
 RUN apt-get update && apt-get install -y \
     texlive-latex-base \
     texlive-latex-extra \
     texlive-fonts-recommended \
     texlive-latex-recommended \
     texlive-fonts-extra \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 20 LTS (for pptxgenjs PPTX generation)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js global dependencies for PPTX generation
+RUN npm install -g pptxgenjs react-icons react react-dom sharp
 
 # Set working directory
 WORKDIR /app

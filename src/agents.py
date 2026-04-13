@@ -5,18 +5,25 @@ import time
 
 
 class LLM:
-    def __init__(self, model_name: str = "gpt-4o-mini"):
-        self.model_name = "gpt-4o-mini"
+    def __init__(self, model_name: str = "gpt-4o-mini", seed: int = None, temperature: float = None):
+        self.model_name = model_name
+        self.seed = seed
+        self.temperature = temperature
         self.client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
     def generate_response(self, messages: List[Dict[str, str]], stream = False) -> str:
         start_time = time.time()
 
         try:
-            chat_completion = self.client.chat.completions.create(
-                messages=messages,
-                model=self.model_name
-            )
+            kwargs = {
+                "messages": messages,
+                "model": self.model_name,
+            }
+            if self.seed is not None:
+                kwargs["seed"] = self.seed
+            if self.temperature is not None:
+                kwargs["temperature"] = self.temperature
+            chat_completion = self.client.chat.completions.create(**kwargs)
             response = chat_completion.choices[0].message.content
             print(f"[Response from {self.model_name}]: {response}")
 

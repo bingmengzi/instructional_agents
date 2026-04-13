@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "instructional-agents"
+version = "1.0.0"
+description = "LLM Agents on Automated Course Material Generation for Teaching Faculties"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Huaiyuan Yao"},
+    {name = "Wanpeng Xu"},
+    {name = "Justin Turnau"},
+    {name = "Nadia Kellam"},
+    {name = "Hua Wei"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Education",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "openai>=1.0.0",
+    "pandas>=2.0.0",
+    "fastapi>=0.104.1",
+    "uvicorn[standard]>=0.24.0",
+    "python-multipart>=0.0.6",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "PyPDF2>=3.0.0",
+    "pdfplumber>=0.10.0",
+    "numpy>=1.24.0",
+    "markitdown[pptx]>=0.1.0",
+]
+
+[project.optional-dependencies]
+vector-db = ["chromadb>=0.4.0"]
+
+[project.urls]
+Homepage = "https://hyan-yao.github.io/instructional_agents_homepage/"
+Repository = "https://github.com/DaRL-GenAI/instructional_agents"
+Issues = "https://github.com/DaRL-GenAI/instructional_agents/issues"
+Paper = "https://arxiv.org/abs/2508.19611"
+
+[project.scripts]
+instructional-agents = "run:main"
+
+[tool.setuptools]
+py-modules = ["run", "api_server", "evaluate"]
+
+[tool.setuptools.packages.find]
+include = ["src*"]
+
+[tool.setuptools.package-data]
+"*" = [
+    "catalog/*.json",
+    "catalog/references/*.tex",
+    "frontend/*.html",
+    "frontend/*.js",
+    "frontend/*.css",
+    "src/*.js",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

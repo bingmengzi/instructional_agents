@@ -2,6 +2,7 @@
 
 # Instructional Agents: Reducing Teaching Faculty Workload through Multi-Agent Instructional Design
 
+[![PyPI](https://img.shields.io/pypi/v/instructional-agents?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/instructional-agents/)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
@@ -42,6 +43,8 @@ An AI-powered instructional design system based on the ADDIE model for automated
 
 ### 📦 Releases
 
+> **[2026.3.26]** Published on [PyPI](https://pypi.org/project/instructional-agents/) - `pip install instructional-agents`
+>
 > **[2026.1.6]** Release [v1.0.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - Initial release with core features - Thanks to all the contributors! ❤️
 
 <details>
@@ -65,6 +68,7 @@ An AI-powered instructional design system based on the ADDIE model for automated
 | 🌐 **Web Interface** | User-friendly web interface for course generation, progress monitoring, and file management |
 | 📁 **Multiple Usage Methods** | Support for web interface, command-line, and RESTful API |
 | 📄 **LaTeX/PDF Output** | Generate professional LaTeX slides and compile to PDF format |
+| 🎨 **PowerPoint (PPTX) Export** | Convert LaTeX Beamer slides to visually rich PPTX using pptxgenjs with icons, shadows, and Slide Masters |
 | ✅ **Automatic Evaluation** | Built-in evaluation system for assessing generated course materials |
 
 ---
@@ -259,6 +263,7 @@ exp/{experiment_name}/
 ├── chapter_1/                             # Chapter 1 materials
 │   ├── slides.tex                         # LaTeX source
 │   ├── slides.pdf                         # Compiled PDF slides (⭐ ready to use)
+│   ├── slides.pptx                        # PowerPoint slides (⭐ editable)
 │   ├── script.md                          # Presentation script
 │   ├── assessment.md                      # Assessment materials
 │   └── statistics_slides_chapter_1.json   # Chapter statistics
@@ -285,9 +290,27 @@ See [Documentation](#-documentation) section below for detailed guides and refer
 
 ---
 
+## 📦 Install via PyPI
+
+```bash
+pip install instructional-agents
+```
+
+After installation, you can run the CLI directly:
+
+```bash
+# Set your OpenAI API key
+export OPENAI_API_KEY=your_api_key_here
+
+# Generate a course
+instructional-agents "Introduction to Machine Learning"
+```
+
+---
+
 ## 🔧 Local Development Setup
 
-For developers who want to run the system locally without Docker:
+For developers who want to run the system locally from source:
 
 ### 1. Prerequisites
 
@@ -297,12 +320,28 @@ For developers who want to run the system locally without Docker:
   - macOS: `brew install --cask mactex`
   - Ubuntu: `sudo apt-get install texlive-full`
   - Windows: Install [MiKTeX](https://miktex.org/)
+- Node.js 18+ (for PPTX generation)
+  - macOS: `brew install node`
+  - Ubuntu: `sudo apt-get install nodejs npm`
+  - Windows: Install from [nodejs.org](https://nodejs.org/)
 
 ### 2. Install Dependencies
 
 ```bash
+# Python dependencies
 pip install -r requirements.txt
+
+# Or install in editable mode
+pip install -e .
+
+# Node.js dependencies (for PPTX generation)
+npm install -g pptxgenjs
+
+# Optional: install react-icons for slide icons (recommended)
+npm install -g react-icons react react-dom sharp
 ```
+
+> **Note**: `pptxgenjs` is required for LaTeX-to-PPTX conversion. The `react-icons` + `sharp` packages are optional but recommended — they add topic-specific icons to each slide (e.g., 🤖 for agent topics, 🧠 for AI topics). Without them, slides will use simple geometric shapes instead.
 
 ### 3. Configuration
 
@@ -374,6 +413,11 @@ python run.py "AI Fundamentals" --catalog ai_catalog
 python run.py "Educational Psychology" --copilot --catalog edu_psy
 ```
 
+**Minimal Working Example** (generates a small 3-week course in ~5 min):
+```bash
+python run.py "Intro to Python" --catalog mwe_catalog --exp mwe_test --seed 42
+```
+
 **Command Line Arguments**:
 ```bash
 python run.py <course_name> [OPTIONS]
@@ -387,6 +431,11 @@ Options:
                            (optional: specify catalog name without '.json')
   --model MODEL            OpenAI model to use (default: gpt-4o-mini)
   --exp EXP_NAME           Experiment name for saving output (default: exp1)
+  --seed SEED              Random seed for reproducibility
+  --temperature TEMP       Sampling temperature for LLM
+  --optimize STORAGE_ID    Optimize mode: provide storage_id of uploaded PDFs
+  --requirements TEXT      User requirements for optimization (with --optimize)
+  --chapter NAME           Specific chapter to optimize (with --optimize)
 ```
 
 ### Method 3: Direct API Calls
@@ -483,6 +532,37 @@ python evaluate.py --exp web_dev_v1
 ```
 
 Evaluation results are saved in `eval/{experiment_name}/` directory.
+
+### LaTeX-to-PPTX Conversion
+
+Convert generated LaTeX Beamer slides to editable PowerPoint presentations with professional design:
+
+```bash
+# Convert a single chapter
+python -c "
+from src.latex_to_pptx import LaTeXToPPTXConverter
+converter = LaTeXToPPTXConverter()
+converter.convert('exp/my_course/chapter_1/slides.tex', 'exp/my_course/chapter_1/slides.pptx')
+"
+
+# Convert all chapters in a course
+python -c "
+from src.latex_to_pptx import LaTeXToPPTXConverter
+converter = LaTeXToPPTXConverter()
+converter.convert_directory('exp/my_course/')
+"
+```
+
+**PPTX Design Features:**
+- 🎨 **Midnight Executive palette** — navy/ice-blue/orange color scheme with Georgia/Calibri fonts
+- 📐 **Slide Masters** — consistent layouts via `CONTENT_MASTER`, `CONTENT_CODE`, and `DARK_MASTER`
+- 🌓 **Dark/light sandwich** — dark slides for title/conclusion, light for content
+- 🔤 **Smart icons** — topic-aware icons from react-icons (robot, brain, code, etc.) in colored circles
+- 🎭 **Varied layouts** — auto-detected: single-text, list-only, blocks, code, columns, mixed
+- 💫 **Visual polish** — shadows on blocks/code, sidebar accent motif, decorative circles
+- 📏 **Typography** — 36pt+ titles, 14-16pt body, auto-scaling for long titles
+
+**Architecture**: `LaTeX .tex → [Python LaTeXParser] → JSON → [Node.js pptxgenjs] → .pptx`
 
 ### Background Execution with Logging
 

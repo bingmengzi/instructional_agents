@@ -1,6 +1,6 @@
 """
 PDF Slide Deck Processor
-处理PDF格式的幻灯片文件，支持按章节/需求提取内容
+Process PDF slide deck files with support for extracting content by chapter/requirement
 """
 
 import os
@@ -27,7 +27,7 @@ except ImportError:
 
 
 class PDFSlideProcessor:
-    """处理PDF幻灯片文件，支持按需提取"""
+    """Process PDF slide files with on-demand extraction"""
     
     def __init__(self, output_dir: str = "knowledge_base"):
         self.output_dir = Path(output_dir)
@@ -35,14 +35,14 @@ class PDFSlideProcessor:
     
     def store_pdf_files(self, files: List[Path], storage_id: str) -> Dict[str, Any]:
         """
-        存储PDF文件（不立即处理）
-        
+        Store PDF files (without processing immediately)
+
         Args:
-            files: PDF文件列表
-            storage_id: 存储标识符
-            
+            files: List of PDF files
+            storage_id: Storage identifier
+
         Returns:
-            存储信息
+            Storage information
         """
         storage_dir = self.output_dir / "temp_storage" / storage_id
         storage_dir.mkdir(parents=True, exist_ok=True)
@@ -51,7 +51,7 @@ class PDFSlideProcessor:
         for pdf_file in files:
             if pdf_file.suffix.lower() == '.pdf':
                 dest_path = storage_dir / pdf_file.name
-                # 复制文件到存储目录
+                # Copy file to storage directory
                 shutil.copy2(pdf_file, dest_path)
                 stored_files.append({
                     "filename": pdf_file.name,
@@ -66,7 +66,7 @@ class PDFSlideProcessor:
             "files": stored_files
         }
         
-        # 保存元数据
+        # Save metadata
         metadata_file = storage_dir / "metadata.json"
         with open(metadata_file, 'w', encoding='utf-8') as f:
             json.dump(metadata, f, indent=2, ensure_ascii=False)
@@ -80,37 +80,37 @@ class PDFSlideProcessor:
         target_chapters: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
-        根据用户需求提取相关PDF内容
-        
+        Extract relevant PDF content based on user requirements
+
         Args:
-            storage_id: 存储标识符
-            user_requirements: 用户需求描述
-            target_chapters: 目标章节列表（如["Chapter 1", "第3章"]），如果为None则分析全部
-            
+            storage_id: Storage identifier
+            user_requirements: Description of user requirements
+            target_chapters: List of target chapters (e.g. ["Chapter 1", "Chapter 3"]); if None, analyze all
+
         Returns:
-            提取的内容数据
+            Extracted content data
         """
         storage_dir = self.output_dir / "temp_storage" / storage_id
         
         if not storage_dir.exists():
             raise ValueError(f"Storage {storage_id} not found")
         
-        # 加载元数据
+        # Load metadata
         metadata_file = storage_dir / "metadata.json"
         with open(metadata_file, 'r', encoding='utf-8') as f:
             metadata = json.load(f)
         
-        # 获取所有PDF文件
+        # Get all PDF files
         pdf_files = [Path(f["stored_path"]) for f in metadata["files"]]
         
-        # 如果指定了章节，先识别相关文件
+        # If chapters are specified, identify relevant files first
         if target_chapters:
             relevant_files = self._identify_relevant_files(pdf_files, target_chapters)
         else:
-            # 如果用户要求优化全部课程，分析所有章节
+            # If user requests optimization of the entire course, analyze all chapters
             relevant_files = pdf_files
         
-        # 提取相关内容
+        # Extract relevant content
         extracted_slides = []
         for pdf_file in relevant_files:
             try:
@@ -142,21 +142,21 @@ class PDFSlideProcessor:
         target_chapters: List[str]
     ) -> List[Path]:
         """
-        识别包含目标章节的PDF文件
-        
+        Identify PDF files containing target chapters
+
         Args:
-            pdf_files: PDF文件列表
-            target_chapters: 目标章节列表
-            
+            pdf_files: List of PDF files
+            target_chapters: List of target chapters
+
         Returns:
-            相关的PDF文件列表
+            List of relevant PDF files
         """
         relevant_files = []
         
         for pdf_file in pdf_files:
-            # 快速扫描PDF标题和第一页，看是否包含章节信息
+            # Quick scan of PDF title and first page to check for chapter information
             try:
-                # 检查文件名
+                # Check filename
                 filename_match = any(
                     self._match_chapter_in_text(pdf_file.stem, chapter) 
                     for chapter in target_chapters
@@ -166,14 +166,14 @@ class PDFSlideProcessor:
                     relevant_files.append(pdf_file)
                     continue
                 
-                # 检查前几页的标题
+                # Check titles in the first few pages
                 if PDFPLUMBER_AVAILABLE:
                     with pdfplumber.open(pdf_file) as pdf:
                         for page_num in range(min(3, len(pdf.pages))):
                             page = pdf.pages[page_num]
                             text = page.extract_text() or ""
                             
-                            # 检查是否包含章节关键词
+                            # Check if it contains chapter keywords
                             if any(
                                 self._match_chapter_in_text(text, chapter) 
                                 for chapter in target_chapters
@@ -182,28 +182,28 @@ class PDFSlideProcessor:
                                 break
             except Exception as e:
                 print(f"Warning: Could not scan {pdf_file.name}: {e}")
-                # 如果无法扫描，默认包含该文件
+                # If scanning fails, include the file by default
                 relevant_files.append(pdf_file)
         
         return relevant_files
     
     def _match_chapter_in_text(self, text: str, chapter_pattern: str) -> bool:
-        """检查文本是否匹配章节模式"""
-        # 支持的章节格式：
+        """Check if text matches a chapter pattern"""
+        # Supported chapter formats:
         # - "Chapter 1", "Chapter1", "Ch1"
         # - "第1章", "第 1 章"
         # - "Chapter One", "第一章"
-        # - "1" (简单的数字)
+        # - "1" (simple number)
         
         text_lower = text.lower()
         pattern_lower = chapter_pattern.lower()
         
-        # 提取数字
+        # Extract number
         chapter_num_match = re.search(r'\d+', pattern_lower)
         if chapter_num_match:
             chapter_num = chapter_num_match.group()
             
-            # 检查各种章节格式
+            # Check various chapter formats
             patterns = [
                 rf'chapter\s*{chapter_num}\b',
                 rf'ch\s*{chapter_num}\b',
@@ -215,15 +215,15 @@ class PDFSlideProcessor:
                 if re.search(pattern, text_lower, re.IGNORECASE):
                     return True
         
-        # 直接文本匹配
+        # Direct text matching
         if pattern_lower in text_lower:
             return True
         
         return False
     
     def _extract_chapter_from_filename(self, filename: str) -> Optional[str]:
-        """从文件名提取章节信息"""
-        # 匹配常见的章节格式
+        """Extract chapter information from filename"""
+        # Match common chapter formats
         patterns = [
             r'chapter\s*(\d+)',
             r'ch\s*(\d+)',
@@ -245,40 +245,40 @@ class PDFSlideProcessor:
         target_chapters: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
-        处理单个PDF文件，可以根据需求过滤内容
-        
+        Process a single PDF file, optionally filtering content based on requirements
+
         Args:
-            pdf_path: PDF文件路径
-            user_requirements: 用户需求（用于内容过滤）
-            target_chapters: 目标章节列表
-            
+            pdf_path: Path to the PDF file
+            user_requirements: User requirements (for content filtering)
+            target_chapters: List of target chapters
+
         Returns:
-            提取的幻灯片数据
+            Extracted slide data
         """
         pdf_file = Path(pdf_path)
         pdf_name = pdf_file.stem
         
-        # 提取文本内容
+        # Extract text content
         text_content = self.extract_text(pdf_path)
         
-        # 识别幻灯片结构
+        # Identify slide structure
         slide_structure = self.identify_slide_structure(pdf_path, text_content)
         
-        # 如果指定了章节，过滤相关幻灯片
+        # If chapters are specified, filter relevant slides
         if target_chapters:
             slide_structure = self._filter_slides_by_chapters(
                 slide_structure, 
                 target_chapters
             )
         
-        # 如果提供了用户需求，进一步过滤相关内容
+        # If user requirements are provided, further filter relevant content
         if user_requirements:
             slide_structure = self._filter_slides_by_requirements(
                 slide_structure,
                 user_requirements
             )
         
-        # 提取元数据
+        # Extract metadata
         metadata = self.extract_metadata(pdf_path)
         
         return {
@@ -298,13 +298,13 @@ class PDFSlideProcessor:
         slide_structure: List[Dict[str, Any]],
         target_chapters: List[str]
     ) -> List[Dict[str, Any]]:
-        """根据章节过滤幻灯片"""
+        """Filter slides by chapter"""
         filtered = []
         
         for slide in slide_structure:
             slide_text = f"{slide.get('title', '')} {slide.get('content', '')}"
             
-            # 检查是否匹配任何目标章节
+            # Check if it matches any target chapter
             if any(
                 self._match_chapter_in_text(slide_text, chapter)
                 for chapter in target_chapters
@@ -318,9 +318,9 @@ class PDFSlideProcessor:
         slide_structure: List[Dict[str, Any]],
         user_requirements: str
     ) -> List[Dict[str, Any]]:
-        """根据用户需求过滤相关内容（可以扩展使用embedding相似度）"""
-        # 这里可以使用简单的关键词匹配，或者使用embedding相似度
-        # 为了简单，先使用关键词匹配
+        """Filter relevant content based on user requirements (can be extended to use embedding similarity)"""
+        # Simple keyword matching can be used here, or embedding similarity
+        # For simplicity, using keyword matching for now
         requirements_lower = user_requirements.lower()
         keywords = requirements_lower.split()
         
@@ -328,19 +328,19 @@ class PDFSlideProcessor:
         for slide in slide_structure:
             slide_text = f"{slide.get('title', '')} {slide.get('content', '')}".lower()
             
-            # 检查是否包含关键词
+            # Check if it contains keywords
             if any(keyword in slide_text for keyword in keywords if len(keyword) > 2):
                 filtered.append(slide)
         
-        return filtered if filtered else slide_structure  # 如果没有匹配，返回全部
+        return filtered if filtered else slide_structure  # If no matches, return all
     
     def extract_text(self, pdf_path: str) -> Dict[str, Any]:
-        """提取PDF中的文本内容"""
+        """Extract text content from a PDF"""
         text_by_page = []
         
         if PDFPLUMBER_AVAILABLE:
             try:
-                # 使用pdfplumber提取文本（更准确）
+                # Use pdfplumber for text extraction (more accurate)
                 with pdfplumber.open(pdf_path) as pdf:
                     for page_num, page in enumerate(pdf.pages, 1):
                         text = page.extract_text()
@@ -354,7 +354,7 @@ class PDFSlideProcessor:
                 print(f"Warning: pdfplumber failed: {e}")
         
         if not text_by_page and PYPDF2_AVAILABLE:
-            # 备用方案：使用PyPDF2
+            # Fallback: use PyPDF2
             try:
                 with open(pdf_path, 'rb') as file:
                     pdf_reader = PyPDF2.PdfReader(file)
@@ -381,23 +381,23 @@ class PDFSlideProcessor:
         }
     
     def identify_slide_structure(self, pdf_path: str, text_content: Dict) -> List[Dict[str, Any]]:
-        """识别幻灯片结构（标题、内容等）"""
+        """Identify slide structure (titles, content, etc.)"""
         slides = []
         
-        # 简单策略：每页作为一个幻灯片
+        # Simple strategy: treat each page as one slide
         for page in text_content["pages"]:
             text = page["text"]
             
-            # 尝试识别标题（通常是第一行或最大字体）
+            # Try to identify title (usually the first line or largest font)
             lines = text.split("\n")
             title = lines[0].strip() if lines else "Untitled Slide"
             
-            # 提取内容
+            # Extract content
             content = "\n".join(lines[1:]).strip() if len(lines) > 1 else text
             
             slides.append({
                 "slide_number": page["page_number"],
-                "title": title[:100],  # 限制标题长度
+                "title": title[:100],  # Limit title length
                 "content": content,
                 "bullet_points": self.extract_bullet_points(content)
             })
@@ -405,13 +405,13 @@ class PDFSlideProcessor:
         return slides
     
     def extract_bullet_points(self, text: str) -> List[str]:
-        """提取文本中的要点"""
+        """Extract bullet points from text"""
         lines = text.split("\n")
         bullet_points = []
         
         for line in lines:
             line = line.strip()
-            # 识别常见的要点标记
+            # Identify common bullet point markers
             if line and (line.startswith("•") or 
                         line.startswith("-") or 
                         line.startswith("*") or
@@ -421,7 +421,7 @@ class PDFSlideProcessor:
         return bullet_points
     
     def extract_metadata(self, pdf_path: str) -> Dict[str, Any]:
-        """提取PDF元数据"""
+        """Extract PDF metadata"""
         metadata = {
             "num_pages": 0,
             "file_size": os.path.getsize(pdf_path),

@@ -510,19 +510,21 @@ class ADDIE:
     ADDIE (Analyze, Design, Develop, Implement, Evaluate) class for instructional design
     This class coordinates a series of deliberations to create a complete course design
     """
-    def __init__(self, course_name, model_name: str = "gpt-4o-mini", copilot: bool = False, catalog: bool = False, data_catalog: dict = {}, data_copilot: dict = {}):
+    def __init__(self, course_name, model_name: str = "gpt-4o-mini", copilot: bool = False, catalog: bool = False, data_catalog: dict = {}, data_copilot: dict = {}, seed: int = None, temperature: float = None):
         """
         Initialize ADDIE workflow
-        
+
         Args:
             model_name: Name of the LLM model to use
             copilot: Whether to enable copilot mode with user feedback
+            seed: Random seed for reproducibility (passed to OpenAI API)
+            temperature: Sampling temperature (passed to OpenAI API)
         """
         self.course_name = course_name
         self.model_name = model_name
         self.copilot = copilot
         self.catalog = catalog
-        self.llm = LLM(model_name=model_name)
+        self.llm = LLM(model_name=model_name, seed=seed, temperature=temperature)
         self.deliberations = []
         self.results = []
         

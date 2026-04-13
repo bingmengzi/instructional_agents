@@ -2,6 +2,7 @@
 
 # Instructional Agents: 基于 LLM 智能体的自动化课程材料生成系统
 
+[![PyPI](https://img.shields.io/pypi/v/instructional-agents?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/instructional-agents/)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
@@ -43,6 +44,8 @@
 
 ### 📦 版本发布
 
+> **[2026.3.26]** 已发布至 [PyPI](https://pypi.org/project/instructional-agents/) - `pip install instructional-agents`
+>
 > **[2026.1.6]** 发布 [v1.0.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - 首次发布，核心功能已上线 - 感谢所有贡献者！❤️
 
 <details>
@@ -66,6 +69,7 @@
 | 🌐 **Web 界面** | 用户友好的 Web 界面，用于课程生成、进度监控和文件管理 |
 | 📁 **多种使用方式** | 支持 Web 界面、命令行和 RESTful API |
 | 📄 **LaTeX/PDF 输出** | 生成专业的 LaTeX 幻灯片并编译为 PDF 格式 |
+| 🎨 **PowerPoint (PPTX) 导出** | 通过 pptxgenjs 将 LaTeX Beamer 幻灯片转换为精美的 PPTX，支持图标、阴影和 Slide Masters |
 | ✅ **自动评估** | 内置评估系统，用于评估生成的课程材料 |
 
 ---
@@ -260,6 +264,7 @@ exp/{experiment_name}/
 ├── chapter_1/                             # 第1章材料
 │   ├── slides.tex                         # LaTeX 源文件
 │   ├── slides.pdf                         # 编译后的 PDF 幻灯片（⭐ 可直接使用）
+│   ├── slides.pptx                        # PowerPoint 幻灯片（⭐ 可编辑）
 │   ├── script.md                          # 演讲脚本
 │   ├── assessment.md                      # 评估材料
 │   └── statistics_slides_chapter_1.json   # 章节统计
@@ -286,9 +291,27 @@ exp/{experiment_name}/
 
 ---
 
+## 📦 通过 PyPI 安装
+
+```bash
+pip install instructional-agents
+```
+
+安装后可直接使用命令行工具：
+
+```bash
+# 设置 OpenAI API Key
+export OPENAI_API_KEY=your_api_key_here
+
+# 生成课程
+instructional-agents "机器学习导论"
+```
+
+---
+
 ## 🔧 本地开发配置
 
-适用于想在本地运行系统而不使用 Docker 的开发者：
+适用于想从源码运行系统的开发者：
 
 ### 1. 前置要求
 
@@ -298,12 +321,28 @@ exp/{experiment_name}/
   - macOS: `brew install --cask mactex`
   - Ubuntu: `sudo apt-get install texlive-full`
   - Windows: 安装 [MiKTeX](https://miktex.org/)
+- Node.js 18+（用于 PPTX 生成）
+  - macOS: `brew install node`
+  - Ubuntu: `sudo apt-get install nodejs npm`
+  - Windows: 从 [nodejs.org](https://nodejs.org/) 安装
 
 ### 2. 安装依赖
 
 ```bash
+# Python 依赖
 pip install -r requirements.txt
+
+# 或以开发模式安装
+pip install -e .
+
+# Node.js 依赖（用于 PPTX 生成）
+npm install -g pptxgenjs
+
+# 可选：安装 react-icons 以获得幻灯片图标（推荐）
+npm install -g react-icons react react-dom sharp
 ```
+
+> **说明**：`pptxgenjs` 是 LaTeX 转 PPTX 的必需依赖。`react-icons` + `sharp` 是可选但推荐安装的——它们会为每张幻灯片添加与主题相关的图标（如 🤖 代理主题、🧠 AI 主题）。未安装时，幻灯片将使用简单几何形状代替。
 
 ### 3. 配置
 
@@ -484,6 +523,37 @@ python evaluate.py --exp web_dev_v1
 ```
 
 评估结果保存在 `eval/{experiment_name}/` 目录中。
+
+### LaTeX 转 PPTX
+
+将生成的 LaTeX Beamer 幻灯片转换为可编辑的 PowerPoint 演示文稿：
+
+```bash
+# 转换单个章节
+python -c "
+from src.latex_to_pptx import LaTeXToPPTXConverter
+converter = LaTeXToPPTXConverter()
+converter.convert('exp/my_course/chapter_1/slides.tex', 'exp/my_course/chapter_1/slides.pptx')
+"
+
+# 批量转换课程所有章节
+python -c "
+from src.latex_to_pptx import LaTeXToPPTXConverter
+converter = LaTeXToPPTXConverter()
+converter.convert_directory('exp/my_course/')
+"
+```
+
+**PPTX 设计特性：**
+- 🎨 **Midnight Executive 配色** — 海军蓝/冰蓝/橙色配色方案，Georgia/Calibri 字体
+- 📐 **Slide Masters** — 通过 `CONTENT_MASTER`、`CONTENT_CODE`、`DARK_MASTER` 统一布局
+- 🌓 **明暗三明治** — 标题/结论页深色，内容页浅色
+- 🔤 **智能图标** — 基于主题自动选择 react-icons 图标（机器人、大脑、代码等）
+- 🎭 **多样化布局** — 自动检测：纯文本、列表、块、代码、分栏、混合
+- 💫 **视觉效果** — 块和代码的阴影效果，侧边栏装饰条，装饰圆形
+- 📏 **排版规范** — 标题 36pt+，正文 14-16pt，长标题自动缩放
+
+**架构**：`LaTeX .tex → [Python LaTeXParser] → JSON → [Node.js pptxgenjs] → .pptx`
 
 ### 后台执行与日志
 
