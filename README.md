@@ -73,6 +73,12 @@ An AI-powered instructional design system based on the ADDIE model for automated
 | 🎨 **PowerPoint (PPTX) Export** | Convert LaTeX Beamer slides to visually rich PPTX using pptxgenjs with icons, shadows, and Slide Masters |
 | ✅ **Automatic Evaluation** | Built-in evaluation system for assessing generated course materials |
 
+### 🎬 How It Works
+
+<p align="center">
+  <img src="docs/process-video.gif" alt="ADDIE Pipeline: Multi-Agent Collaboration Process" width="720">
+</p>
+
 ---
 
 ## 🚀 Quick Start (Docker - Recommended)
