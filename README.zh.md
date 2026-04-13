@@ -44,13 +44,15 @@
 
 ### 📦 版本发布
 
-> **[2026.3.26]** 已发布至 [PyPI](https://pypi.org/project/instructional-agents/) - `pip install instructional-agents`
+> **[2026.4.13]** 发布 [v1.1.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - 新增 [LaTeX 转 PPTX](#latex-转-pptx) 功能，支持 pptxgenjs、Slide Masters、react-icons 图标和阴影效果
 >
-> **[2026.1.6]** 发布 [v1.0.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - 首次发布，核心功能已上线 - 感谢所有贡献者！❤️
+> **[2026.3.26]** 已发布至 [PyPI](https://pypi.org/project/instructional-agents/) - `pip install instructional-agents`
 
 <details>
 <summary>历史版本</summary>
 
+> **[2026.1.6]** [v1.0.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - 首次发布，核心功能已上线 - 感谢所有贡献者！❤️
+>
 > **[2026.1.4]** [v0.1.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - Docker 部署和 Web 界面支持
 
 </details>
