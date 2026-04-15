@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "instructional-agents"
 dynamic = ["version"]
-description = "LLM Agents on Automated Course Material Generation for Teaching Faculties"
+description = "Reducing Teaching Faculty Workload through Multi-Agent Instructional Design"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
@@ -45,7 +45,7 @@ dependencies = [
 vector-db = ["chromadb>=0.4.0"]
 
 [project.urls]
-Homepage = "https://hyan-yao.github.io/instructional_agents_homepage/"
+Homepage = "https://darl-genai.github.io/instructional_agents_homepage/"
 Repository = "https://github.com/DaRL-GenAI/instructional_agents"
 Issues = "https://github.com/DaRL-GenAI/instructional_agents/issues"
 Paper = "https://arxiv.org/abs/2508.19611"
