@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "instructional-agents"
-version = "1.1.0"
+dynamic = ["version"]
 description = "LLM Agents on Automated Course Material Generation for Teaching Faculties"
 readme = "README.md"
 license = {text = "MIT"}
@@ -52,6 +52,9 @@ Paper = "https://arxiv.org/abs/2508.19611"
 
 [project.scripts]
 instructional-agents = "run:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "src.__version__"}
 
 [tool.setuptools]
 py-modules = ["run", "api_server", "evaluate"]

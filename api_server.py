@@ -23,6 +23,7 @@ from typing import Optional as Opt
 import uvicorn
 
 from run import run_instructional_design, run_optimization
+from src import __version__
 from src.pdf_processor import PDFSlideProcessor
 from src.ADDIE_optimize import ADDIEOptimizer
 import tempfile
@@ -32,7 +33,7 @@ import shutil
 app = FastAPI(
     title="Instructional Agents API",
     description="API for automated course material generation",
-    version="1.1.0"
+    version=__version__
 )
 
 # CORS configuration
@@ -92,7 +93,7 @@ async def health_check():
     
     return {
         "status": status,
-        "version": "1.1.0",
+        "version": __version__,
         "timestamp": datetime.now().isoformat()
     }
 
