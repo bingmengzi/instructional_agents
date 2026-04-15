@@ -8,12 +8,12 @@
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
 <p align="center">
-  <a href="https://hyan-yao.github.io/instructional_agents_homepage/"><img src="https://img.shields.io/website?url=https%3A%2F%2Fhyan-yao.github.io%2Finstructional_agents_homepage%2F&up_message=Website&style=for-the-badge&logo=github&logoColor=white" alt="Website"></a>
+  <a href="https://darl-genai.github.io/instructional_agents_homepage/"><img src="https://img.shields.io/website?url=https%3A%2F%2Fdarl-genai.github.io%2Finstructional_agents_homepage%2F&up_message=Website&style=for-the-badge&logo=github&logoColor=white" alt="Website"></a>
   &nbsp;&nbsp;
   <a href="https://github.com/DaRL-GenAI/instructional_agents"><img src="https://img.shields.io/github/stars/DaRL-GenAI/instructional_agents?style=for-the-badge&logo=github&logoColor=white&color=red" alt="GitHub Stars"></a>
 </p>
 
-[**快速开始**](#-快速开始docker-方式---推荐) · [**核心模块**](#-核心模块) · [**常见问题**](#-常见问题)
+[**Claude Code**](#use-via-claude-code) · [**快速开始**](#-快速开始docker-方式---推荐) · [**核心模块**](#-核心模块) · [**常见问题**](#-常见问题)
 
 [🇬🇧 English](README.md) · [🇨🇳 中文](README.zh.md)
 
@@ -26,7 +26,7 @@
 
 ```
 @misc{yao2025instructionalagentsllmagents,
-  title={Instructional Agents: LLM Agents on Automated Course Material Generation for Teaching Faculties},
+  title={Instructional Agents: Reducing Teaching Faculty Workload through Multi-Agent Instructional Design},
   author={Yao, Huaiyuan and Xu, Wanpeng and Turnau, Justin and Kellam, Nadia and Wei, Hua},
   year={2025},
   eprint={2508.19611},
@@ -44,6 +44,8 @@
 
 ### 📦 版本发布
 
+> **[2026.4.15]** 发布 [Claude Code Skills](https://github.com/DaRL-GenAI/instructional_agents-skills) - 在 Claude Code 中直接调用本项目流水线：`/plugin install DaRL-GenAI/instructional_agents-skills`
+>
 > **[2026.4.13]** 发布 [v1.1.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - 新增 [LaTeX 转 PPTX](#latex-转-pptx) 功能，支持 pptxgenjs、Slide Masters、react-icons 图标和阴影效果
 >
 > **[2026.3.26]** 已发布至 [PyPI](https://pypi.org/project/instructional-agents/) - `pip install instructional-agents`
@@ -79,6 +81,21 @@
 <p align="center">
   <img src="docs/process-video.gif" alt="ADDIE 流程：多智能体协作过程" width="720">
 </p>
+
+---
+
+<a id="use-via-claude-code"></a>
+
+## 🤖 在 Claude Code 中使用
+
+直接在 [Claude Code](https://claude.com/claude-code) 里调用完整 ADDIE 流水线与相关工具 —— 无需写任何 Python 代码。
+
+```bash
+pip install instructional-agents
+/plugin install DaRL-GenAI/instructional_agents-skills
+```
+
+然后用自然语言让 Claude 帮你做事：*"帮我生成一门强化学习课程"*、*"把这个 Beamer .tex 转成可编辑的 .pptx"*、*"以系主任的视角评估这套课件"*。完整 skill 列表见 [skills repo](https://github.com/DaRL-GenAI/instructional_agents-skills)。
 
 ---
 

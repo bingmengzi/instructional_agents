@@ -1,6 +1,6 @@
 <div align="center">
 
-# Instructional Agents: LLM Agents on Automated Course Material Generation for Teaching Faculties
+# Instructional Agents: Reducing Teaching Faculty Workload through Multi-Agent Instructional Design
 
 [![PyPI](https://img.shields.io/pypi/v/instructional-agents?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/instructional-agents/)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
@@ -8,12 +8,12 @@
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
 <p align="center">
-  <a href="https://hyan-yao.github.io/instructional_agents_homepage/"><img src="https://img.shields.io/website?url=https%3A%2F%2Fhyan-yao.github.io%2Finstructional_agents_homepage%2F&up_message=Website&style=for-the-badge&logo=github&logoColor=white" alt="Website"></a>
+  <a href="https://darl-genai.github.io/instructional_agents_homepage/"><img src="https://img.shields.io/website?url=https%3A%2F%2Fdarl-genai.github.io%2Finstructional_agents_homepage%2F&up_message=Website&style=for-the-badge&logo=github&logoColor=white" alt="Website"></a>
   &nbsp;&nbsp;
   <a href="https://github.com/DaRL-GenAI/instructional_agents"><img src="https://img.shields.io/github/stars/DaRL-GenAI/instructional_agents?style=for-the-badge&logo=github&logoColor=white&color=red" alt="GitHub Stars"></a>
 </p>
 
-[**Quick Start**](#-quick-start-docker---recommended) · [**Core Modules**](#-core-modules) · [**FAQ**](#-faq)
+[**Claude Code**](#use-via-claude-code) · [**Quick Start**](#-quick-start-docker---recommended) · [**Core Modules**](#-core-modules) · [**FAQ**](#-faq)
 
 [🇨🇳 中文](README.zh.md) · [🇬🇧 English](README.md)
 
@@ -25,7 +25,7 @@ An AI-powered instructional design system based on the ADDIE model for automated
 
 ```
 @misc{yao2025instructionalagentsllmagents,
-  title={Instructional Agents: LLM Agents on Automated Course Material Generation for Teaching Faculties},
+  title={Instructional Agents: Reducing Teaching Faculty Workload through Multi-Agent Instructional Design},
   author={Yao, Huaiyuan and Xu, Wanpeng and Turnau, Justin and Kellam, Nadia and Wei, Hua},
   year={2025},
   eprint={2508.19611},
@@ -43,6 +43,8 @@ An AI-powered instructional design system based on the ADDIE model for automated
 
 ### 📦 Releases
 
+> **[2026.4.15]** Released [Claude Code Skills](https://github.com/DaRL-GenAI/instructional_agents-skills) - invoke the pipeline directly from Claude Code: `/plugin install DaRL-GenAI/instructional_agents-skills`
+>
 > **[2026.4.13]** Release [v1.1.0](https://github.com/DaRL-GenAI/instructional_agents/releases) - Added [LaTeX-to-PPTX conversion](#latex-to-pptx-conversion) with pptxgenjs, Slide Masters, react-icons, and shadow effects
 >
 > **[2026.3.26]** Published on [PyPI](https://pypi.org/project/instructional-agents/) - `pip install instructional-agents`
@@ -78,6 +80,21 @@ An AI-powered instructional design system based on the ADDIE model for automated
 <p align="center">
   <img src="docs/process-video.gif" alt="ADDIE Pipeline: Multi-Agent Collaboration Process" width="720">
 </p>
+
+---
+
+<a id="use-via-claude-code"></a>
+
+## 🤖 Use via Claude Code
+
+Invoke the full ADDIE pipeline and related tools directly from [Claude Code](https://claude.com/claude-code) — no Python boilerplate.
+
+```bash
+pip install instructional-agents
+/plugin install DaRL-GenAI/instructional_agents-skills
+```
+
+Then ask Claude in natural language: *"Generate a course on Reinforcement Learning"*, *"Convert this Beamer .tex to an editable .pptx"*, *"Evaluate these slides as a Program Chair"*. See the [skills repo](https://github.com/DaRL-GenAI/instructional_agents-skills) for all available commands.
 
 ---
 
