@@ -99,16 +99,20 @@ class ADDIERunner:
     Runner class for the ADDIE workflow
     Handles command-line interaction and execution logic
     """
-    def __init__(self, addie_instance, output_dir="output"):
+    def __init__(self, addie_instance, output_dir="output", resume: bool = False):
         """
         Initialize the runner with an ADDIE instance
-        
+
         Args:
             addie_instance: An instance of the ADDIE class
+            output_dir: Directory to read/write deliberation outputs.
+            resume: If True, skip deliberations whose outputs are already
+                present on disk and pick up chapter work mid-stream.
         """
         self.addie = addie_instance
         self.course_name = None
         self.output_dir = output_dir
+        self.resume = resume
         self.results = []
         self.chapters = []
 
@@ -138,7 +142,32 @@ class ADDIERunner:
         while i < len(foundation_deliberations):
             deliberation = foundation_deliberations[i]
             print(f"\n{'#'*50}\nDeliberation {i+1}/{len(foundation_deliberations)}: {deliberation.name}\n{'#'*50}\n")
-            
+
+            # Resume: if a result file for this deliberation already exists,
+            # load it into self.results and skip the LLM call.
+            if self.resume:
+                result_path = os.path.join(
+                    self.output_dir,
+                    f"result_{deliberation.id}.{deliberation.output_format}",
+                )
+                if os.path.exists(result_path) and os.path.getsize(result_path) > 0:
+                    with open(result_path, "r") as f:
+                        loaded = f.read()
+                    # _save_result prepends "Name\n===\n\n" — strip it so the
+                    # loaded content matches what deliberation.run() returns.
+                    header_prefix = (
+                        f"{deliberation.name}\n{'='*len(deliberation.name)}\n\n"
+                    )
+                    if loaded.startswith(header_prefix):
+                        loaded = loaded[len(header_prefix):]
+                    if i >= len(self.results) - 1:
+                        self.results.append(loaded)
+                    else:
+                        self.results[i + 1] = loaded
+                    print(f"[resume] Skipped '{deliberation.name}' — loaded from {result_path}")
+                    i += 1
+                    continue
+
             # Get user suggestion if copilot mode is enabled
             user_suggestion = ""
             if self.addie.copilot:
@@ -184,10 +213,19 @@ class ADDIERunner:
     
     def _process_syllabus(self):
         """Process the syllabus to extract chapters"""
-        # Get the syllabus design result 
+        # Resume: if chapters were already processed in a previous run,
+        # just reload them from disk instead of calling the LLM again.
+        chapters_path = os.path.join(self.output_dir, "processed_chapters.json")
+        if self.resume and os.path.exists(chapters_path):
+            self._load_chapters()
+            if self.chapters:
+                print(f"[resume] Loaded {len(self.chapters)} chapters from {chapters_path}")
+                return
+
+        # Get the syllabus design result
         # The syllabus should be the result of the syllabus_design deliberation (4th deliberation, index 3+1)
         syllabus_index = 4  # Index in results array (including course name)
-        
+
         if len(self.results) > syllabus_index:
             syllabus_content = self.results[syllabus_index]
             
@@ -241,17 +279,55 @@ class ADDIERunner:
         # For each chapter, run the SlidesDeliberation
         for chapter_idx, chapter in enumerate(self.chapters):
             print(f"\n{'#'*50}\nChapter {chapter_idx+1}/{len(self.chapters)}: {chapter['title']}\n{'#'*50}\n")
-            
+
             # Create chapter directory
             chapter_dir = os.path.join(self.output_dir, f"chapter_{chapter_idx+1}")
             os.makedirs(chapter_dir, exist_ok=True)
-            
+
+            # Resume: skip this chapter entirely if all three final outputs
+            # already exist and are non-empty. Partial chapters (e.g. empty
+            # dir, or missing one of the three) fall through — the inner
+            # SlidesDeliberation will pick up from its own checkpoint.
+            if self.resume:
+                required = ["slides.tex", "script.md", "assessment.md"]
+                if all(
+                    os.path.exists(os.path.join(chapter_dir, f))
+                    and os.path.getsize(os.path.join(chapter_dir, f)) > 0
+                    for f in required
+                ):
+                    print(f"[resume] Skipped chapter_{chapter_idx+1} — all outputs present")
+                    continue
+
             # Run SlidesDeliberation for this chapter with retry support
             self._run_slides_generation_with_retry(chapter, chapter_idx, chapter_dir)
-        
+
+        # All chapters finished successfully — sweep any leftover checkpoint
+        # files (belt-and-suspenders; SlidesDeliberation already removes its
+        # own on successful completion).
+        self._cleanup_checkpoints()
+
         # After all chapters, compile the LaTeX source and slides script
         compiler = LaTeXCompiler(self.output_dir)
         compiler.compile_all()
+
+    def _cleanup_checkpoints(self):
+        """Remove any leftover _checkpoint.json files under output_dir.
+
+        Called at the end of a fully-successful chapter phase so that a
+        re-run without --resume starts clean, and so that the on-disk
+        artifact tree doesn't carry around stale resume state.
+        """
+        removed = 0
+        for root, _dirs, files in os.walk(self.output_dir):
+            for name in files:
+                if name == "_checkpoint.json":
+                    try:
+                        os.remove(os.path.join(root, name))
+                        removed += 1
+                    except OSError as exc:
+                        print(f"Warning: could not remove {os.path.join(root, name)}: {exc}")
+        if removed:
+            print(f"[cleanup] Removed {removed} leftover checkpoint file(s)")
         
     def _run_slides_generation_with_retry(self, chapter, chapter_idx, chapter_dir):
         """Run slides generation with retry support"""
@@ -378,6 +454,7 @@ class ADDIERunner:
             output_dir=os.path.join(self.output_dir, chapter_dir_name),
             catalog=self.addie.catalog,
             catalog_dict=self.addie.catalog_dict,
+            resume=self.resume,
         )
     
     def _save_result(self, deliberation, result):
@@ -510,7 +587,7 @@ class ADDIE:
     ADDIE (Analyze, Design, Develop, Implement, Evaluate) class for instructional design
     This class coordinates a series of deliberations to create a complete course design
     """
-    def __init__(self, course_name, model_name: str = "gpt-4o-mini", copilot: bool = False, catalog: bool = False, data_catalog: dict = {}, data_copilot: dict = {}, seed: int = None, temperature: float = None):
+    def __init__(self, course_name, model_name: str = "gpt-4o-mini", copilot: bool = False, catalog: bool = False, data_catalog: dict = {}, data_copilot: dict = {}, seed: int = None, temperature: float = None, resume: bool = False):
         """
         Initialize ADDIE workflow
 
@@ -519,11 +596,15 @@ class ADDIE:
             copilot: Whether to enable copilot mode with user feedback
             seed: Random seed for reproducibility (passed to OpenAI API)
             temperature: Sampling temperature (passed to OpenAI API)
+            resume: If True, skip deliberations whose outputs already exist in
+                output_dir and resume chapter generation from the last
+                incomplete chapter (or a mid-chapter checkpoint).
         """
         self.course_name = course_name
         self.model_name = model_name
         self.copilot = copilot
         self.catalog = catalog
+        self.resume = resume
         self.llm = LLM(model_name=model_name, seed=seed, temperature=temperature)
         self.deliberations = []
         self.results = []
@@ -865,5 +946,5 @@ class ADDIE:
         Returns:
             List of results from each deliberation
         """
-        runner = ADDIERunner(self, output_dir=output_dir)
+        runner = ADDIERunner(self, output_dir=output_dir, resume=self.resume)
         return runner.run()

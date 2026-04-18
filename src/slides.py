@@ -237,19 +237,20 @@ class SlidesDeliberation:
     """
     SlidesDeliberation class for organizing agents to collaboratively create slides
     """
-    def __init__(self, 
+    def __init__(self,
                  id: str,
                  name: str,
-                 agents: Dict[str, Agent], 
+                 agents: Dict[str, Agent],
                  llm: LLM,
                  max_rounds: int = 1,
                  output_dir: str = "./outputs/",
                  catalog: bool = False,
-                 catalog_dict: Dict[str, Any] = None
+                 catalog_dict: Dict[str, Any] = None,
+                 resume: bool = False,
                  ):
         """
         Initialize SlidesDeliberation
-        
+
         Args:
             id: Unique identifier for this deliberation
             name: Human-readable name for this deliberation
@@ -258,6 +259,9 @@ class SlidesDeliberation:
             max_rounds: Maximum discussion rounds
             latex_template: LaTeX template to use for slides
             output_dir: Directory to save output files
+            resume: If True and a checkpoint exists in output_dir, pick up
+                from the last completed step / slide instead of starting
+                from scratch.
         """
         self.id = id
         self.name = name
@@ -267,13 +271,104 @@ class SlidesDeliberation:
         self.output_dir = output_dir
         self.catalog = catalog
         self.catalog_dict = catalog_dict if catalog_dict else {}
-        
+        self.resume = resume
+
         # Initialize containers for results
         self.slides_outline = []
         self.latex_dict = {}  # Now stores list of frames per slide
         self.slides_script = {}
         self.assessment_template = {}  # New: assessment template
         self.assessment_content = {}   # New: assessment content
+
+    # ------------------------------------------------------------------ #
+    # Checkpoint helpers (resume support)                                #
+    # ------------------------------------------------------------------ #
+    CHECKPOINT_FILENAME = "_checkpoint.json"
+
+    def _checkpoint_path(self) -> str:
+        return os.path.join(self.output_dir, self.CHECKPOINT_FILENAME)
+
+    def _save_checkpoint(self, done_steps, last_slide_idx=None):
+        """Persist mid-run state so a crash can be resumed.
+
+        Writes atomically via rename to avoid a truncated checkpoint if the
+        process dies mid-write.
+        """
+        payload = {
+            "version": 1,
+            "done_steps": list(done_steps),
+            "last_slide_idx": last_slide_idx,
+            "slides_outline": self.slides_outline,
+            "latex_dict": {str(k): v for k, v in self.latex_dict.items()},
+            "slides_script": {str(k): v for k, v in self.slides_script.items()},
+            "assessment_template": {
+                str(k): v for k, v in self.assessment_template.items()
+            },
+            "assessment_content": {
+                str(k): v for k, v in self.assessment_content.items()
+            },
+            "latex_prefix": getattr(self, "latex_prefix", ""),
+            "latex_suffix": getattr(self, "latex_suffix", ""),
+            "user_feedback": getattr(self, "user_feedback", {}),
+            "time_slides": self.time_slides,
+            "token_slides": self.token_slides,
+            "time_script": self.time_script,
+            "token_script": self.token_script,
+            "time_assessment": self.time_assessment,
+            "token_assessment": self.token_assessment,
+        }
+        os.makedirs(self.output_dir, exist_ok=True)
+        final_path = self._checkpoint_path()
+        tmp_path = final_path + ".tmp"
+        # Compact separators (no spaces/newlines) — this checkpoint is written
+        # after every slide, so keeping it small matters more than readability.
+        with open(tmp_path, "w") as f:
+            json.dump(payload, f, separators=(",", ":"), default=str)
+        os.replace(tmp_path, final_path)
+
+    def _load_checkpoint(self):
+        """Return the checkpoint dict and hydrate self.* fields; None if absent."""
+        path = self._checkpoint_path()
+        if not os.path.exists(path):
+            return None
+        try:
+            with open(path, "r") as f:
+                ckpt = json.load(f)
+        except Exception as e:
+            print(f"[resume] Failed to load checkpoint at {path}: {e}")
+            return None
+
+        self.slides_outline = ckpt.get("slides_outline", [])
+        self.latex_dict = {
+            int(k): v for k, v in ckpt.get("latex_dict", {}).items()
+        }
+        self.slides_script = {
+            int(k): v for k, v in ckpt.get("slides_script", {}).items()
+        }
+        self.assessment_template = {
+            int(k): v for k, v in ckpt.get("assessment_template", {}).items()
+        }
+        self.assessment_content = {
+            int(k): v for k, v in ckpt.get("assessment_content", {}).items()
+        }
+        self.latex_prefix = ckpt.get("latex_prefix", "")
+        self.latex_suffix = ckpt.get("latex_suffix", "")
+        self.time_slides = ckpt.get("time_slides", 0)
+        self.token_slides = ckpt.get("token_slides", 0)
+        self.time_script = ckpt.get("time_script", 0)
+        self.token_script = ckpt.get("token_script", 0)
+        self.time_assessment = ckpt.get("time_assessment", 0)
+        self.token_assessment = ckpt.get("token_assessment", 0)
+        return ckpt
+
+    def _delete_checkpoint(self):
+        """Remove the checkpoint file after successful completion."""
+        path = self._checkpoint_path()
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+            except OSError as e:
+                print(f"Warning: could not remove checkpoint {path}: {e}")
     
    
     def run(self, chapter: Dict[str, str], user_feedback: Dict[str, Any]):
@@ -290,45 +385,86 @@ class SlidesDeliberation:
         print(f"\n{'='*50}\nStarting Slides Deliberation: {self.name}\n{'='*50}\n")
         print(f"Chapter: {chapter['title']}\n")
 
-        self.time_slides, self.token_slides = 0, 0
-        self.time_script, self.token_script = 0, 0
-        self.time_assessment, self.token_assessment = 0, 0
+        # ------------------------------------------------------------------ #
+        # Resume: try to load checkpoint first so we hydrate counters from it #
+        # rather than zeroing them out.                                       #
+        # ------------------------------------------------------------------ #
+        done_steps = []
+        ckpt = self._load_checkpoint() if self.resume else None
+        if ckpt is not None:
+            done_steps = list(ckpt.get("done_steps", []))
+            print(f"[resume] Loaded checkpoint from {self._checkpoint_path()} "
+                  f"— completed steps: {done_steps}")
+        else:
+            self.time_slides, self.token_slides = 0, 0
+            self.time_script, self.token_script = 0, 0
+            self.time_assessment, self.token_assessment = 0, 0
 
         self.user_feedback = user_feedback
 
-        # Step 0: Get templates
+        # Step 0: Always re-fetch templates (cheap, deterministic, no LLM)
         self._get_templates()
-        
+
         # Step 1: Generate slides outline
-        self._generate_slides_outline(chapter)
-        
+        if "outline" not in done_steps:
+            self._generate_slides_outline(chapter)
+            done_steps.append("outline")
+            self._save_checkpoint(done_steps)
+        else:
+            print("[resume] Skipped step 1 (slides outline)")
+
         # Step 2: Generate initial LaTeX template
-        self._generate_initial_latex(chapter)
-        
+        if "initial_latex" not in done_steps:
+            self._generate_initial_latex(chapter)
+            done_steps.append("initial_latex")
+            self._save_checkpoint(done_steps)
+        else:
+            print("[resume] Skipped step 2 (initial LaTeX)")
+
         # Step 3: Generate slides script template
-        self._generate_slides_script_template()
-        
+        if "script_template" not in done_steps:
+            self._generate_slides_script_template()
+            done_steps.append("script_template")
+            self._save_checkpoint(done_steps)
+        else:
+            print("[resume] Skipped step 3 (script template)")
+
         # Step 4: Generate assessment template
-        self._generate_assessment_template(chapter)
-        
-        # Step 5: For each slide, generate content, LaTeX, script, and assessment
+        if "assessment_template" not in done_steps:
+            self._generate_assessment_template(chapter)
+            done_steps.append("assessment_template")
+            self._save_checkpoint(done_steps)
+        else:
+            print("[resume] Skipped step 4 (assessment template)")
+
+        # Step 5: For each slide, generate content, LaTeX, script, and assessment.
+        # A slide is considered fully generated when assessment_content has an
+        # entry for it (last sub-step 5.4 writes it).
         for slide_idx, slide in enumerate(self.slides_outline):
+            if slide_idx in self.assessment_content:
+                print(f"[resume] Skipped slide {slide_idx + 1}/{len(self.slides_outline)}: "
+                      f"{slide.get('title', '')} — already generated")
+                continue
+
             print(f"\n{'-'*50}\nProcessing Slide {slide_idx + 1}/{len(self.slides_outline)}: {slide['title']}\n{'-'*50}\n")
-            
+
             # Get context window (current slide plus adjacent slides for context)
             context_slides = self._get_context_slides(slide_idx)
-            
+
             # Step 5.1: Generate slide draft content
             slide_draft = self._generate_slide_draft(slide, context_slides, chapter)
-            
+
             # Step 5.2: Generate slide LaTeX code (potentially multiple frames)
             self._generate_slide_latex(slide_idx, slide, slide_draft)
-            
+
             # Step 5.3: Generate slide script
             self._generate_slide_script(slide_idx, slide, slide_draft)
-            
+
             # Step 5.4: Generate slide assessment
             self._generate_slide_assessment(slide_idx, slide, slide_draft)
+
+            # Checkpoint after every completed slide
+            self._save_checkpoint(done_steps, last_slide_idx=slide_idx)
         
         # Step 6: Compile final LaTeX source
         latex_source = self._compile_latex_source()
@@ -366,7 +502,10 @@ class SlidesDeliberation:
                 "time_assessment": self.time_assessment,
                 "token_assessment": self.token_assessment
             }, f, indent=2)
-    
+
+        # Chapter finished successfully — clean up the resume checkpoint.
+        self._delete_checkpoint()
+
     def _get_templates(self):
         """Get LaTeX template"""
         self.latex_template = SlideUtils.get_latex_template(

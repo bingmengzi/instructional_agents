@@ -34,16 +34,19 @@ def load_catalog(catalog_dir: str = "catalog", catalog_name: str = "merged_catal
     return data_catalog
 
 
-def run_instructional_design(course_name: str, copilot = None, catalog = None, model_name: str = "gpt-4o-mini", exp_name: str = "test", seed: int = None, temperature: float = None):
+def run_instructional_design(course_name: str, copilot = None, catalog = None, model_name: str = "gpt-4o-mini", exp_name: str = "test", seed: int = None, temperature: float = None, resume: bool = False):
     """
     Main function to run the instructional design workflow by sequentially
     executing the six deliberation processes
-    
+
     Args:
         copilot: Whether to enable copilot mode with user feedback
         model_name: Name of the LLM model to use
         exp_name: Name of the experiment for logging purposes
-    
+        resume: If True, skip deliberations whose outputs already exist in
+            exp/{exp_name}/ and resume chapter generation from the last
+            incomplete chapter (or mid-chapter checkpoint).
+
     Returns:
         List of results from each process
     """
@@ -92,11 +95,13 @@ def run_instructional_design(course_name: str, copilot = None, catalog = None, m
 
 
     from src.ADDIE import ADDIE
-    addie = ADDIE(course_name, model_name=model_name, copilot=use_copilot, catalog=use_catalog, data_catalog=data_catalog, data_copilot=data_copilot, seed=seed, temperature=temperature)
+    addie = ADDIE(course_name, model_name=model_name, copilot=use_copilot, catalog=use_catalog, data_catalog=data_catalog, data_copilot=data_copilot, seed=seed, temperature=temperature, resume=resume)
 
     # Run the workflow
     output_dir = f"./exp/{exp_name}/"
     os.makedirs(output_dir, exist_ok=True)
+    if resume:
+        print(f"[resume] Resuming from existing outputs in {output_dir}")
     addie.run(output_dir=output_dir)
     
     # Calculate execution time
@@ -203,6 +208,14 @@ def main():
         help="Sampling temperature (passed to OpenAI API)"
     )
 
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume an interrupted run: skip deliberations whose outputs "
+             "already exist in exp/<exp_name>/ and pick up chapter generation "
+             "from the last incomplete chapter (or mid-chapter checkpoint)."
+    )
+
     # Optimize mode arguments
     parser.add_argument(
         "--optimize",
@@ -285,6 +298,7 @@ def main():
             exp_name=args.exp,
             seed=args.seed,
             temperature=args.temperature,
+            resume=args.resume,
         )
 
 
