@@ -1,0 +1,27 @@
+\frametitle{Template Usage Notes}
+\begin{block}{How to Use This Template}
+    \begin{itemize}
+      \item Replace placeholder text with your content
+      \item Update title page information
+      \item Replace example images with your figures
+      \item Adjust colors in the preamble if needed
+    \end{itemize}
+  \end{block}
+
+  \begin{alertblock}{Important Tips}
+    \begin{itemize}
+      \item Keep slides concise (aim for 1 main idea per slide)
+      \item Use consistent visual style throughout
+      \item Test your presentation on the display you will use
+      \item Consider creating a handout version
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Custom Commands}
+    \begin{itemize}
+      \item \texttt{\textbackslash concept\{text\}} - Blue highlighted concept
+      \item \texttt{\textbackslash hilight\{text\}} - Orange background highlight
+      \item \texttt{\textbackslash source\{citation\}} - Small source citation
+      \item \texttt{\textbackslash separator} - Horizontal rule
+    \end{itemize}
+  \end{block}

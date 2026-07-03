@@ -1,0 +1,25 @@
+/* @theme tech */
+@import 'default';
+
+section {
+  background-color: #1E1E1E; /* 深色背景 */
+  color: #D4D4D4;
+  font-family: 'Fira Code', 'Consolas', monospace; /* 代码字体 */
+}
+
+h1 {
+  color: #4AF626; /* 极客绿 */
+  text-transform: uppercase;
+  border-bottom: 2px solid #4AF626;
+  padding-bottom: 10px;
+}
+
+h2 {
+  color: #569CD6; /* VSCode 蓝 */
+}
+
+pre, code {
+  background-color: #000000;
+  border: 1px solid #333;
+  color: #CE9178;
+}

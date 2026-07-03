@@ -1,0 +1,4 @@
+\beamer@sectionintoc {1}{Basic Slide Layouts}{3}{0}{1}
+\beamer@sectionintoc {2}{Visual Elements}{5}{0}{2}
+\beamer@sectionintoc {3}{Technical Content}{7}{0}{3}
+\beamer@sectionintoc {4}{Reference Slides}{9}{0}{4}

@@ -1,0 +1,25 @@
+/* @theme kids */
+@import 'default';
+
+section {
+  background-color: #FFF0F5; /* 浅粉色背景 */
+  color: #555;
+  font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; /* 卡通字体 */
+  font-size: 35px;
+}
+
+h1 {
+  color: #FF69B4; /* 亮粉色标题 */
+  text-align: center;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+h2 {
+  color: #FFA500; /* 橙色副标题 */
+  border-bottom: 4px dashed #FFD700;
+  padding-bottom: 10px;
+}
+
+li {
+  margin-bottom: 15px;
+}
