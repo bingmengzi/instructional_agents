@@ -1,0 +1,8 @@
+include LICENSE
+include README.md
+include requirements.txt
+include config.json
+include .env.example
+recursive-include catalog *.json *.tex
+recursive-include frontend *.html *.js *.css
+recursive-include docs *.md
